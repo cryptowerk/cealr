@@ -1,3 +1,0 @@
-/Users/olaf/CLionProjects/cealr/CMakeFiles/edit_cache.dir
-/Users/olaf/CLionProjects/cealr/CMakeFiles/rebuild_cache.dir
-/Users/olaf/CLionProjects/cealr/CMakeFiles/cealr.dir
