@@ -5,7 +5,7 @@
 |_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
 
 Licensed under the MIT License <http://opensource.org/licenses/MIT>.
-Copyright (c) 2018 Cryptowerk <http://nlohmann.me>.
+Copyright (c) 2018 Cryptowerk <http://www.cryptowerk.com>.
 
 Permission is hereby  granted, free of charge, to any  person obtaining a copy
 of this software and associated  documentation files (the "Software"), to deal
