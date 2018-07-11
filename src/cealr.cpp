@@ -404,7 +404,7 @@ JSON Cealr::verifySeal() const {
     JSON json;
     json["name"] = docNames;
     json["contentType"] = *new string("applicaton/octet-stream");
-    json["hashes"] = hexHashes;
+    json["retrievalDocHash"] = hexHashes;
     stringstream url;
     url << *server << "/API/v5/verify";
     string sUrl = url.str();
