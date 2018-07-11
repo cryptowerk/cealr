@@ -4,7 +4,7 @@ project(cealr)
 set(CMAKE_CXX_STANDARD 11)
 cmake_policy(SET CMP0060 NEW)
 
-set(SOURCE_FILES src/cealr.cpp src/cealr.h src/Properties.cpp src/Properties.h src/CurlUtil.cpp src/CurlUtil.h)
+set(SOURCE_FILES src/cealr.cpp src/cealr.h src/Properties.cpp src/Properties.h src/CurlUtil.cpp src/CurlUtil.h src/fileUtil.cpp src/fileUtil.h)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 

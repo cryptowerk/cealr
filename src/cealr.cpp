@@ -11,12 +11,10 @@
 
 #include "cealr.h"
 #include "CurlUtil.h"
+#include "fileUtil.h"
 #include <openssl/sha.h>
 #include <zconf.h>
 #include <sys/termios.h>
-
-using namespace std;
-
 
 string toHex(const unsigned char hash[SHA256_DIGEST_LENGTH]) {
     stringstream buf;
@@ -69,8 +67,6 @@ string *Cealr::hashFile(const string sFile) {
 
 void PrintUsageMessage::usageMessage(string cmdName) {
     const char *sampleServerUrl = "https://devapi1.cryptowerk.com/platform";
-    const char *sampleApiKey = "TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww=";
-    const char *sampleApiCredential = "vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=";
 
     cout << "Proof that file has not changed since registration:" << endl;
     cout << cmdName << " [options] <file>" << endl;
@@ -89,8 +85,8 @@ void PrintUsageMessage::usageMessage(string cmdName) {
     cout << endl;
     cout << "Additional options with --seal:" << endl;
     cout << "  --update          Email update when submitted file is verifiable in blockchain" << endl;
-    cout << "  --apiKey          API key, e.g. '" << sampleApiKey << "'" << endl;
-    cout << "  --apiCredential   API credential, e.g. ' " << sampleApiCredential << "'" << endl;
+    cout << "  --apiKey          API key, e.g. '" << "TskZZ8Zc2QzE3G+lxvUnWPKMk27Ucd1tm9K/YSPXWww=" << "'" << endl;
+    cout << "  --apiCredential   API credential, e.g. ' " << "vV/2buaDD5aAcCQxCtk4WRJs/yK+BewThR1qUXikdJo=" << "'" << endl;
     cout << "  --login           to re-use an already registered account with CryptoWerk (or simply get the file " << DEFAULT_PROPERTIES << " from a system where you previously registered your account" << endl;
     cout << endl;
     cout << "Example for sealing:" << endl;
@@ -126,6 +122,8 @@ char Cealr::getSingleCharacterAnswer(const string &question, const set<char> val
         c = toupper(c);
         if (c == '\n' || c == 0) {
             c = defaultAnswer;
+        } else {
+            cout << endl;
         }
         if (!(ok = (bool) validAnswers.count((char) c))) {
             cout << "Invalid answer, please try again" << endl;
@@ -249,10 +247,11 @@ Cealr::Cealr(const int argc, const char **argv) {
         }
     }
     if (apiKey && !apiCredential) {
-        stringstream what("The option --apiKey requires also the option --apiCredential.\n");
-        what << "You can use the option --apiCredential on its own if an apiKey\n"
-             << "is provided in properties or in environment variable \"CEALR_APIKEY\"\n"
-             << "to override the environment variable \"CEALR_APICREDENTIAL\"";
+        stringstream what;
+        what << "The option --apiKey requires also the option --apiCredential." << endl
+             << "You can use the option --apiCredential on its own if an apiKey" << endl
+             << "is provided in properties or in environment variable \"CEALR_APIKEY\"" << endl
+             << "to override the environment variable \"CEALR_APICREDENTIAL\"" << endl;
 
         throw PrintUsageMessage(cmdName, new string(what.str()));
     }
@@ -270,6 +269,12 @@ void Cealr::addToHashes(const string &filename) {
         hexHashes.append(",");
     }
     hexHashes.append(*hashHex);
+
+    string *docName = fileNameWithoutPath(filename);
+    if (docNames.size() > 0) {
+        docNames.append(",");
+    }
+    docNames.append(*docName);
 }
 
 void Cealr::run() {
@@ -354,7 +359,7 @@ void Cealr::run() {
                      << "same file on this system/for this user." << endl << endl
                      << "Alternatively you could login to your CryptoWerk Portal and generate a new API key." << endl
                      << "Be careful: This would invalidate the current API key for this account-user" << endl
-                     << "combination which may be used in other systems.";
+                     << "combination which may be used in other systems." << endl;
                 exit(1);
             }
             (*properties)["apiKey"] = *apiKey;
@@ -377,7 +382,8 @@ JSON Cealr::sealFile() const {
     json["name"] = docNames;
     json["contentType"] = *new string("applicaton/octet-stream");
     json["store"] = true; //
-    json["hashes"] = hexHashes; //
+    json["hashes"] = hexHashes;
+    json["public"] = true;
 
     stringstream url;
     url << *server << "/API/v5/register";
@@ -398,12 +404,12 @@ JSON Cealr::verifySeal() const {
     JSON json;
     json["name"] = docNames;
     json["contentType"] = *new string("applicaton/octet-stream");
-    json["hashes"] = hexHashes; //
-
+    json["hashes"] = hexHashes;
     stringstream url;
     url << *server << "/API/v5/verify";
     string sUrl = url.str();
     CurlUtil curlUtil(sUrl, verbose);
+    curlUtil.addHeader("X-ApiKey: TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=");
     string *returnData = curlUtil.post(json); // {"maxSupportedAPIVersion":5,"success":true,"minSupportedAPIVersion":1}
 //    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
     auto returnJson = JSON::parse(*returnData);
