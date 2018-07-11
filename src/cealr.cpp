@@ -383,7 +383,7 @@ JSON Cealr::sealFile() const {
     json["contentType"] = *new string("applicaton/octet-stream");
     json["store"] = true; //
     json["hashes"] = hexHashes;
-    json["public"] = true;
+    json["publiclyRetrievable"] = true;
 
     stringstream url;
     url << *server << "/API/v5/register";
