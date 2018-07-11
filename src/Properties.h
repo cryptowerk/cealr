@@ -26,7 +26,7 @@ public:
 
 class Properties: public map<string,string> {
 private:
-    const string sFile;
+    string sFile;
     bool saved;
 public:
     Properties(const string&);
@@ -46,6 +46,10 @@ public:
 
     void save() throw(FileException);
     bool isSaved();
+
+    void setFile(const string &fileName);
+
+    static const string getFullFileName(const string &basic_string);
 };
 
 #endif //SEALER_PROPERTIES_H

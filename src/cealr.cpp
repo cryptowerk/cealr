@@ -308,14 +308,9 @@ void Cealr::run() {
             string *organization = /*NULL; //todo oz:*/ getOptString("Please enter your organization (if applicable)...: ");
             // register user
             JSON returnJson = registerUser(firstName, lastName, organization);
-            cout << "returnJson[\"success\"]" << returnJson["success"] << endl;
-            (*properties)["email"]          = *email;
+//            JSON returnJson = JSON::parse("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
+//            cout << "returnJson[\"success\"]" << returnJson["success"] << endl;
             properties->erase("apiKey");
-            // todo dont save server, when it is the default server
-            if (*server!=DEFAULT_SERVER) {
-                (*properties)["server"]     = *server;
-            }
-            properties->save(); // exception???
             // safe data on properties
             // inform about email confirmation
             cout << "You are now registered with our server.\""  << *server << "\""<< endl
@@ -327,10 +322,12 @@ void Cealr::run() {
                  << endl;
         }
         (*properties)["email"]          = *email;
-        (*properties)["server"]         = *server;
+        if (*server!=DEFAULT_SERVER) {
+            (*properties)["server"]     = *server;
+        }
         properties->save();
-        // todo We could exit here, if user just got created and let them just start cealr again after activation
-        // todo or we wait for activation inside cealr
+        // todo We could not exit here, if user just got created we could wait in cealr (password entry) for activation
+        // todo or we xeit here and they just need to start cealr again after activation
         if (registerClient){
             exit(1);
         }
@@ -343,12 +340,21 @@ void Cealr::run() {
         if (!apiKey || !apiKey->length() || !apiCredential || !apiCredential->length()) {
             string *password = readPassword();
             JSON returnJson = creds(*password);
-            *apiKey = returnJson["apiKey"];
-            *apiCredential = returnJson["apiCredential"];
+            cout << returnJson.dump() << endl;
+            string str = returnJson["apiKey"];
+            apiKey     = new string(str);
+            str        = returnJson["apiCredential"];
+            apiCredential = new string(str);
             if (!apiCredential || !apiCredential->length()) {
-                cerr << "The apiCredential has already been revealed for this apiKey. For your security we can show an apiCredential exactly one time. The command line tool is usually storing it in ~/.cealr/config.properties.";
-                cerr << "If you have another system or user where you use the same CryptoWerk account you can copy the file ~/.cealr/config.properties from there and replace the same file on this system/for this user.";
-                cerr << "Alternatively you could login to your CryptoWerk Portal and generate a new API key. Be careful: This would invalidate the current API key for this account-user combination which may be used in other systems.";
+                cerr << "The apiCredential has already been revealed for this apiKey." << endl
+                     << "For your security we can show an apiCredential exactly one time." << endl
+                     << "The command line tool is usually storing it in ~/.cealr/config.properties." << endl
+                     << "If you have another system or user where you use the same CryptoWerk account" << endl
+                     << "you can copy the file ~/.cealr/config.properties from there and replace the" << endl
+                     << "same file on this system/for this user." << endl << endl
+                     << "Alternatively you could login to your CryptoWerk Portal and generate a new API key." << endl
+                     << "Be careful: This would invalidate the current API key for this account-user" << endl
+                     << "combination which may be used in other systems.";
                 exit(1);
             }
             (*properties)["apiKey"] = *apiKey;

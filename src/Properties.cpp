@@ -4,6 +4,52 @@
 
 #include <cursesf.h>
 #include "Properties.h"
+#include <sys/stat.h> // stat
+#include <errno.h>    // errno, ENOENT, EEXIST
+#ifdef _WIN32
+#include <direct.h>   // _mkdir
+#define stat _stat;
+#define S_IFDIR _S_IFDIR
+#define mkdir _mkdir
+#define PATH_SEPARATOR '\\'
+#else
+#define PATH_SEPARATOR '/'
+#endif
+
+bool dirExists(const std::string& path) {
+    struct stat inf;
+    if (stat(path.c_str(), &inf) != 0)
+    {
+        return false;
+    }
+    return (inf.st_mode & S_IFDIR) != 0;
+}
+
+string *superPath(const string path) {
+    unsigned long pos = path.find_last_of(PATH_SEPARATOR);
+    return (pos == string::npos) ? NULL : new string(path.substr(0, pos));
+}
+
+bool mkdirs(const std::string& path) {
+    bool success = dirExists(path);
+
+    if (!success) {
+        string *sSuperPath = superPath(path);
+        if (sSuperPath!=NULL){
+            success = mkdirs(*sSuperPath);
+            delete sSuperPath;
+            if ( success) {
+                mkdir(path.c_str()
+#ifndef _WIN32
+                        , 0755
+#endif
+                );
+                success = dirExists(path);
+            }
+        }
+    }
+    return success;
+}
 
 FileException::FileException(const string &file) {
     _file = (string *) &file;
@@ -14,11 +60,29 @@ const char *FileException::what() {
 }
 
 //class Properties: public map<string,string> {
-Properties::Properties(const string &fileName) : sFile(fileName) {
+Properties::Properties(const string &fileName) {
+    setFile(fileName);
     readFromFile();
 }
 
 Properties::Properties() : Properties(DEFAULT_PROPERTIES){};
+
+//class Properties: public map<string,string> {
+void Properties::setFile(const string &fileName) {
+    sFile = getFullFileName(fileName);
+}
+
+const string Properties::getFullFileName(const string &fileName) {
+    string fullName = fileName;
+    if ((unsigned char) fullName[0] == '~'){
+        char *home = getenv("HOME");
+        if (home) {
+            fullName = home+fullName.erase(0, 1);
+        }
+    }
+
+    return fullName;
+}
 
 void Properties::readFromFile() {
     ifstream ifs(sFile.c_str());
@@ -48,26 +112,29 @@ string Properties::trim(const string str) {
     unsigned int p;
     while ((p = s.length()) > 0 && (unsigned char) s[p - 1] <= ' ')
         s.resize(p - 1);
-    while ((p = s.length()) > 0 && (unsigned char) s[0] <= ' ')
+    while (s.length() > 0 && (unsigned char) s[0] <= ' ')
         s.erase(0, 1);
     return s;
 }
 
 void Properties::save() throw(FileException){
-    ofstream ofs((sFile).c_str(), std::ofstream::out);
-    if (ofs.fail()){
-        throw FileException(getFile());
+    string *p = superPath(sFile);
+    if (p!=NULL) {
+        mkdirs(*p);
+        ofstream ofs((sFile).c_str(), std::ofstream::out);
+        if (ofs.fail()) {
+            throw FileException(getFile());
+        }
+        for (const auto &p : *this) {
+            ofs << p.first << " = " << p.second << endl;
+        }
+        ofs.flush();
+        ofs.close();
+        saved = true;
     }
-    for (const auto &p : *this) {
-        ofs << p.first << " = " << p.second << endl;
-    }
-    ofs.flush();
-    ofs.close();
-    saved = true;
 }
 
 Properties::~Properties() {
-//    sFile.~string();
 }
 
 bool Properties::operator==(const Properties &properties) const {
@@ -94,3 +161,4 @@ ostream &operator<<(ostream &os, const Properties &properties) {
 bool Properties::isSaved() {
     return saved;
 }
+
