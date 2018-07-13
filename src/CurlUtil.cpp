@@ -1,6 +1,13 @@
-//
-// Created by Olaf Zumpe on 6/17/18.
-//
+/*
+ * _____ _____  _____  ____   ______
+ *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
+ *|  |__|   __|   _   |   |__|
+ *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
+ *
+ *Licensed under the Apache 2.0 License <https://opensource.org/licenses/Apache-2.0>.
+ *Copyright (c) 2018 Cryptowerk <http://www.cryptowerk.com>.
+ *
+ */
 
 #include "CurlUtil.h"
 
@@ -19,7 +26,7 @@ CurlUtil::CurlUtil(string url, bool bVerbose) {
     //todo curlUtilException
     if (!curl) {
         cerr << "Cannot initialize curl." << endl;
-        throw 1;
+        exit(1);
     }
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -120,7 +127,7 @@ string *CurlUtil::_request() {
         else {
             //todo curlUtilException
             cerr << "Unexpected response from server: " << *returnData << endl;
-            throw 1;
+            exit(1);
         }
     } while (redirecting);
     curl_easy_cleanup(curl);
