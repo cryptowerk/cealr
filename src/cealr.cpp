@@ -216,12 +216,12 @@ Cealr::Cealr(const int argc, const char **argv) {
 
     // should call default constructor
     registerArgFound = false;
-    registerClient = false;
-    seal = false;
-    server = NULL;
-    email = NULL;
-    apiKey = NULL;
-    apiCredential = NULL;
+    registerClient   = false;
+    seal             = false;
+    server           = NULL;
+    email            = NULL;
+    apiKey           = NULL;
+    apiCredential    = NULL;
 
     for (int i = 1; i < argc; i++) {
         const string arg = argv[i];
@@ -280,12 +280,12 @@ void Cealr::addToHashes(const string &filename) {
 void Cealr::run() {
     if (!server) {
         if (!(*properties)["server"].size()) {
-            server = getEnvAsString("CEALR_SERVER");
+            server      = getEnvAsString("CEALR_SERVER");
             if (!server){
-                server = new string(DEFAULT_SERVER);
+                server  = new string(DEFAULT_SERVER);
             }
         } else {
-            server = new string((*properties)["server"]);
+            server      = new string((*properties)["server"]);
         }
     }
     //in case of option --seal
@@ -311,6 +311,7 @@ void Cealr::run() {
             firstName = /*"Olaf";//todo oz:*/ *getStringMatching("Please enter your first name.....................: ", name_pattern);
             lastName  = /*"Zumpe"; //todo oz:*/ *getStringMatching("Please enter your last name......................: ", name_pattern);
             string *organization = /*NULL; //todo oz:*/ getOptString("Please enter your organization (if applicable)...: ");
+            cout  << endl << "Contacting server for user registration\""  << *server << "\"" << endl << endl;
             // register user
             JSON returnJson = registerUser(firstName, lastName, organization);
 //            JSON returnJson = JSON::parse("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
@@ -330,6 +331,8 @@ void Cealr::run() {
         if (*server!=DEFAULT_SERVER) {
             (*properties)["server"]     = *server;
         }
+        properties->erase("apiKey");
+        properties->erase("apiCredential");
         properties->save();
         // todo We could not exit here, if user just got created we could wait in cealr (password entry) for activation
         // todo or we xeit here and they just need to start cealr again after activation
@@ -344,12 +347,13 @@ void Cealr::run() {
         initFromPropIfNull(&server, "server");
         if (!apiKey || !apiKey->length() || !apiCredential || !apiCredential->length()) {
             string *password = readPassword();
-            JSON returnJson = creds(*password);
+            cout  << endl << "Contacting server \""  << *server << "\" to retrieve your account credentials." << endl << endl;
+            JSON returnJson  = creds(*password);
             cout << returnJson.dump() << endl;
-            string str = returnJson["apiKey"];
-            apiKey     = new string(str);
-            str        = returnJson["apiCredential"];
-            apiCredential = new string(str);
+            string str       = returnJson["apiKey"];
+            apiKey           = new string(str);
+            str              = returnJson["apiCredential"];
+            apiCredential    = new string(str);
             if (!apiCredential || !apiCredential->length()) {
                 cerr << "The apiCredential has already been revealed for this apiKey." << endl
                      << "For your security we can show an apiCredential exactly one time." << endl
@@ -371,46 +375,56 @@ void Cealr::run() {
         throw PrintUsageMessage(cmdName, new string("Missing mode of operation. You might want to try option '--help'."));
     }
     if (seal) {
+        cout  << endl << "Contacting server \""  << *server << "\" to seal your file \"" << docNames << "\""  << endl << endl;
         sealFile();
+        cout << "File \"" << docNames << "\" is successfully registered with Cryptowerk." << endl;
     } else {
-        verifySeal();
+        const JSON &returnJson = verifySeal();
+        int foundDocs = returnJson["documents"].size();
+        if (foundDocs) {
+            cout << "A file with the same hash as \"" << docNames << " has been registered with Cryptowerk " << 1 << " time(s)." << endl;
+            cout << "Details:" << endl;
+            // todo print out details for the document (when registriert, what blockchain(s) / transaction(s)
+        } else {
+            cout << endl << "This file has not been registered with Cryptowerk." << endl;
+        }
     }
 }
 
 JSON Cealr::sealFile() const {
     JSON json;
-    json["name"] = docNames;
-    json["contentType"] = *new string("applicaton/octet-stream");
-    json["store"] = true; //
-    json["hashes"] = hexHashes;
+    json["name"]                = docNames;
+    json["contentType"]         = *new string("applicaton/octet-stream");
+    json["store"]               = true; //
+    json["hashes"]              = hexHashes;
     json["publiclyRetrievable"] = true;
 
     stringstream url;
     url << *server << "/API/v5/register";
-    string sUrl = url.str();
+    string sUrl                 = url.str();
     CurlUtil curlUtil(sUrl, verbose);
     stringstream apiCredStr;
     apiCredStr << "X-ApiKey: " << *apiKey << " " << *apiCredential;
     const string apiCreds = apiCredStr.str();
     curlUtil.addHeader(apiCreds);
-    string *returnData = curlUtil.post(json); // {"maxSupportedAPIVersion":5,"success":true,"minSupportedAPIVersion":1}
+    string *returnData          = curlUtil.post(json);
 //    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
-    auto returnJson = JSON::parse(*returnData);
+    auto returnJson             = JSON::parse(*returnData);
 
     return returnJson;
 }
 
 JSON Cealr::verifySeal() const {
     JSON json;
-    json["name"] = docNames;
-    json["contentType"] = *new string("applicaton/octet-stream");
+    json["name"]             = docNames;
+    json["contentType"]      = *new string("applicaton/octet-stream");
     json["retrievalDocHash"] = hexHashes;
     stringstream url;
     url << *server << "/API/v5/verify";
     string sUrl = url.str();
     CurlUtil curlUtil(sUrl, verbose);
     curlUtil.addHeader("X-ApiKey: TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=");
-    string *returnData = curlUtil.post(json); // {"maxSupportedAPIVersion":5,"success":true,"minSupportedAPIVersion":1}
+    string *returnData = curlUtil.post(json);
 //    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
     auto returnJson = JSON::parse(*returnData);
 
@@ -419,19 +433,18 @@ JSON Cealr::verifySeal() const {
 
 JSON Cealr::registerUser(const string &firstName, const string &lastName, const string *organization) const {
     JSON json;
-    json["email"] = *email;
-    json["testAccountName"] = *email;
-    json["optFirstName"] = firstName;
-    json["optLastName"] = lastName;
+    json["email"]               = *email;
+    json["testAccountName"]     = *email;
+    json["optFirstName"]        = firstName;
+    json["optLastName"]         = lastName;
     if (organization) {
         json["optOrganization"] = *organization;
     }
     stringstream url;
     url << *server << "/API/v5/registerUser";
-    string sUrl = url.str();
+    string sUrl                 = url.str();
     CurlUtil curlUtil(sUrl, verbose);
-    string *returnData = curlUtil.post(json); // {"maxSupportedAPIVersion":5,"success":true,"minSupportedAPIVersion":1}
-//    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
+    string *returnData          = curlUtil.post(json);
     auto returnJson = JSON::parse(*returnData);
 
     return returnJson;
@@ -439,16 +452,15 @@ JSON Cealr::registerUser(const string &firstName, const string &lastName, const 
 
 JSON Cealr::creds(const string &password) const {
     JSON json;
-    json["email"] = *email;
-    json["password"] = password;
+    json["email"]      = *email;
+    json["password"]   = password;
     stringstream url;
     url << *server << "/API/v5/creds";
-    string sUrl = url.str();
+    string sUrl        = url.str();
     CurlUtil curlUtil(sUrl, verbose);
     string *returnData = curlUtil.post(json); // {"maxSupportedAPIVersion":5,"success":true,"minSupportedAPIVersion":1}
-//    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
     cout << returnData;
-    auto returnJson = JSON::parse(*returnData);
+    auto returnJson    = JSON::parse(*returnData);
 
     return returnJson;
 }
