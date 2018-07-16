@@ -9,7 +9,7 @@
  *
  */
 
-#include <cursesf.h>
+//#include <cursesf.h>
 #include "Properties.h"
 #include "fileUtil.h"
 

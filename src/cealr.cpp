@@ -315,11 +315,10 @@ void Cealr::run() {
             // register user
             JSON returnJson = registerUser(firstName, lastName, organization);
 //            JSON returnJson = JSON::parse("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
-//            cout << "returnJson[\"success\"]" << returnJson["success"] << endl;
             properties->erase("apiKey");
             // safe data on properties
             // inform about email confirmation
-            cout << "You are now registered with our server.\""  << *server << "\""<< endl
+            cout << "You are now registered with our server \""  << *server << "\"."<< endl
                  << "An email got send to your account \"" << *email << "." << endl
                  << "Please find it and follow the instructions in this email to choose your password and" << endl
                  << "to activate your account." << endl
@@ -380,15 +379,49 @@ void Cealr::run() {
         cout << "File \"" << docNames << "\" is successfully registered with Cryptowerk." << endl;
     } else {
         const JSON &returnJson = verifySeal();
-        int foundDocs = returnJson["documents"].size();
-        if (foundDocs) {
-            cout << "A file with the same hash as \"" << docNames << " has been registered with Cryptowerk " << 1 << " time(s)." << endl;
-            cout << "Details:" << endl;
-            // todo print out details for the document (when registriert, what blockchain(s) / transaction(s)
+        auto docs = returnJson["documents"];
+        if (docs!=NULL) {
+            int foundDocs = docs.size();
+            if (foundDocs) {
+                cout << "A file with the same hash as \"" << docNames << " has been registered with Cryptowerk " << foundDocs << " time(s)." << endl;
+                cout << "Details:" << endl;
+                // todo print out details for the document (what blockchain(s) / transaction(s) / time registered)
+                for (auto &doc : docs) {
+                    string docName = doc["name"];
+                    cout << "Submitted at " << formatTime(doc["submittedAt"], "%H:%M:%ST%Y-%m-%d");
+                    if (docName == "") {
+                        cout << " without name";
+                    } else {
+                        cout << " as " << docName;
+                    }
+                    cout << endl;
+                    auto bcRegs = doc["blockchainRegistrations"];
+                    if (bcRegs!=NULL){
+                        for (auto bcReg:bcRegs) {
+                            auto bcDesc = bcReg["blockChainDesc"];
+                            auto bc = bcDesc["generalName"];
+                            auto instance = bcDesc["instanceName"];
+                            cout << " put into blockchain: " << bc << ":" << instance << " at " << formatTime(bcReg["insertedIntoBlockchainAt"], "%H:%M:%ST%Y-%m-%d") << ", Transaction ID: " << bcReg["blockChainId"] << endl;
+                        }
+                    } else {
+                        cout << endl << "There was no blockchain registration for this file." << endl;
+                    }
+                }
+            } else {
+                cout << endl << "This file has not been registered with Cryptowerk." << endl;
+            }
         } else {
-            cout << endl << "This file has not been registered with Cryptowerk." << endl;
+            cerr << "unexpected answer from server: \"" << returnJson.dump() << "\"" << endl;
         }
     }
+}
+
+string Cealr::formatTime(const time_t timestamp, const string format) {
+    struct tm *time;
+    char szTime[40];
+    time = localtime(&timestamp);
+    strftime(szTime, sizeof(szTime), format.c_str(), time);
+    return string(szTime);
 }
 
 JSON Cealr::sealFile() const {

@@ -8,6 +8,12 @@ $ (cd build/debug && cmake ../..)
 $ cmake --build build/debug
 ```
 
+On MAC in case OpenSSL has not been found:
+```console
+$ cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ../..
+```
+
+
 ### Usage
 
 #### Verifying a registered file
@@ -38,7 +44,7 @@ Please enter your organization (if applicable)...:
  
 Contacting server for registration"http://localhost:8080/platform"
  
-You are now registered with our server."http://localhost:8080/platform"
+You are now registered with our server "http://localhost:8080/platform".
 An email got send to your account "john.smith@maildomain.com.
 Please find it and follow the instructions in this email to choose your password and
 to activate your account.
