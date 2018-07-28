@@ -319,8 +319,8 @@ void Cealr::run() {
             // safe data on properties
             // inform about email confirmation
             cout << "You are now registered with our server \""  << *server << "\"."<< endl
-                 << "An email got send to your account \"" << *email << "." << endl
-                 << "Please find it and follow the instructions in this email to choose your password and" << endl
+                 << "An email has been sent to your account \"" << *email << "." << endl
+                 << "Please follow the instructions in this email to choose your password and" << endl
                  << "to activate your account." << endl
                  << "After account activation you will be able to use the cealr command line tool to " << endl
                  << "seal files for proof of existence." << endl
@@ -333,7 +333,7 @@ void Cealr::run() {
         properties->erase("apiKey");
         properties->erase("apiCredential");
         properties->save();
-        // todo We could not exit here, if user just got created we could wait in cealr (password entry) for activation
+        // todo We could not exit here, if user just has been created we could wait in cealr (password entry) for activation
         // todo or we xeit here and they just need to start cealr again after activation
         if (registerClient){
             exit(1);
