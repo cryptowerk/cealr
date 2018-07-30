@@ -419,7 +419,8 @@ void Cealr::run() {
 string Cealr::formatTime(const time_t timestamp, const string format) {
     struct tm *time;
     char szTime[40];
-    time = localtime(&timestamp);
+    const time_t epoch = timestamp/1000;
+    time = localtime(&epoch);
     strftime(szTime, sizeof(szTime), format.c_str(), time);
     return string(szTime);
 }
