@@ -17,21 +17,21 @@
 					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
-			<Target title="edit_cache">
-				<Option working_dir="/Users/olaf/CLionProjects/cealr"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
 			<Target title="rebuild_cache">
 				<Option working_dir="/Users/olaf/CLionProjects/cealr"/>
 				<Option type="4"/>
 				<MakeCommands>
 					<Build command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/olaf/CLionProjects/cealr"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 edit_cache"/>
 					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
 					<Clean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
 					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 clean"/>
@@ -45,13 +45,14 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/opt/local/include"/>
+					<Add directory="/Users/olaf/CLionProjects/cealr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.0.0/include"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
 				</Compiler>
 				<MakeCommands>
 					<Build command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 cealr"/>
@@ -68,13 +69,14 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/opt/local/include"/>
+					<Add directory="/Users/olaf/CLionProjects/cealr/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.0.0/include"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
 				</Compiler>
 				<MakeCommands>
 					<Build command="/usr/bin/make -j8 -f &quot;/Users/olaf/CLionProjects/cealr/Makefile&quot;  VERBOSE=1 cealr/fast"/>
@@ -100,6 +102,12 @@
 			<Option target="cealr"/>
 		</Unit>
 		<Unit filename="/Users/olaf/CLionProjects/cealr/src/cealr.h">
+			<Option target="cealr"/>
+		</Unit>
+		<Unit filename="/Users/olaf/CLionProjects/cealr/src/fileUtil.cpp">
+			<Option target="cealr"/>
+		</Unit>
+		<Unit filename="/Users/olaf/CLionProjects/cealr/src/fileUtil.h">
 			<Option target="cealr"/>
 		</Unit>
 		<Unit filename="/Users/olaf/CLionProjects/cealr/CMakeLists.txt">
