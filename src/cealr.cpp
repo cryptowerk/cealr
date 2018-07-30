@@ -292,7 +292,7 @@ void Cealr::run() {
     if (registerArgFound || (seal && !apiKey && !(*properties)["apiKey"].size() && !(*properties)["email"].size())) {
         // ask if seal without apiKey
         if (!registerArgFound) {
-            registerClient = getSingleCharacterAnswer("Are you already registered with cryptowerk? [y/N]: ", {'Y', 'N'}, 'N') == 'N';
+            registerClient = getSingleCharacterAnswer("Are you already registered with Cryptowerk? [y/N]: ", {'Y', 'N'}, 'N') == 'N';
         }
         regex email_pattern("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", regex_constants::icase);
         if (email && !regex_match(*email, email_pattern)) {
@@ -319,7 +319,7 @@ void Cealr::run() {
             // safe data on properties
             // inform about email confirmation
             cout << "You are now registered with our server \""  << *server << "\"."<< endl
-                 << "An email has been sent to your account \"" << *email << "." << endl
+                 << "An email has been sent to your account \"" << *email << "\"." << endl
                  << "Please follow the instructions in this email to choose your password and" << endl
                  << "to activate your account." << endl
                  << "After account activation you will be able to use the cealr command line tool to " << endl
@@ -334,7 +334,7 @@ void Cealr::run() {
         properties->erase("apiCredential");
         properties->save();
         // todo We could not exit here, if user just has been created we could wait in cealr (password entry) for activation
-        // todo or we xeit here and they just need to start cealr again after activation
+        // todo or we exit here and they just need to start cealr again after activation
         if (registerClient){
             exit(1);
         }
