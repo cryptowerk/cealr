@@ -1,5 +1,11 @@
 # cealr
-Command line tool for sealing files with Cryptowerk API
+Command line tool for sealing files with the Cryptowerk Blockchain Enablement Kit API
+
+### Pre-Requisites:
+```console
+$ brew install cmake
+$ brew install openssl
+```
 
 ### Building:
 ```console
@@ -10,7 +16,7 @@ $ cmake --build build/debug
 
 On MAC in case OpenSSL has not been found:
 ```console
-$ cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ../..
+$ (cd build/debug && cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ../..)
 ```
 
 
@@ -32,7 +38,7 @@ User registration:
 
 You need to have an account with cryptowerk.com to seal a file. One way to register is using the option --register with cealr 
 
-Please dont use this option if you already have a cryptowerk account. It will delete the API key and API credential stored for your current user on your current system (~/.cealr/config.properties). 
+Please don't use this option if you already have a Cryptowerk account. It will delete the API key and API credential stored for your current user on your current system (~/.cealr/config.properties). 
 
 ```console
 $ ./cealr --register
@@ -53,13 +59,14 @@ seal files for proof of existence.
 
 ```
 
-Please look in your email account for the registration emil and follow the link to set your password. You will need this password for the first file that you want to seal.
+Please look in your email account for the registration email and follow the link to set your password. You will need this password when you seal a file for the first time after registration.
 
 Seal a file:
 
-For sealing you need API Key and API Credential for your cryptowerk account. There are multiple ways to provide cealr with your api credentials.
+For sealing you need the API Key and API Credential for your Cryptowerk account. There are multiple ways to provide cealr with your API credentials.
 
-As always for sealing you may just use option --seal if you just registered an account (e.g. with option --register) and you already set your password. Therefore it is necessary to find the email that the cryptowerk server sent to you and follow the registration URL. You wil need the password when you seal a file for the first time after registration.
+You may use option --seal if you just registered an account (e.g. with option --register) and you already set your password. 
+If you have not yet set your password, find the registration email that Cryptowerk sent to you and follow the registration URL. 
 
 ```console
 $ ./cealr --seal filetoseal.cpp
