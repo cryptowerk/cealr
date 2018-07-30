@@ -36,6 +36,7 @@
 /.idea/
 /.vscode/
 /cmake-build-debug/
+/cmake-build-release/
 /CMakeFiles
 /CMakeCache.txt
 /build/
