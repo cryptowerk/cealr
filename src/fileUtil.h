@@ -103,6 +103,8 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 #else
 #define PATH_SEPARATOR '/'
 #include <string>
+#include <cstdlib>
+#include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/errno.h>
@@ -112,10 +114,13 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 using namespace std;
 
 bool dirExists(const string& path);
-string *superPath(const string path);
-string *fileNameWithoutPath(const string path);
+bool fileExists(const string& path);
+string *superPath(string path);
+string *fileNameWithoutPath(string path);
 
-bool mkdirs(const std::string& path);
+bool mkdirs(const string& path);
 
+mode_t getFilePermissions(string path);
+mode_t setFilePermissions(string path, mode_t attrs);
 
 #endif //CEALR_FILEUTIL_H

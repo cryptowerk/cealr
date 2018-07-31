@@ -83,6 +83,10 @@ void Properties::save() throw(FileException){
     string *p = superPath(sFile);
     if (p!=NULL) {
         mkdirs(*p);
+        setFilePermissions(*p, S_IRUSR|S_IWUSR|S_IXUSR );
+        if (fileExists(sFile)) {
+            setFilePermissions(sFile, S_IRUSR | S_IWUSR);
+        }
         ofstream ofs((sFile).c_str(), std::ofstream::out);
         if (ofs.fail()) {
             throw FileException(getFile());
@@ -93,7 +97,9 @@ void Properties::save() throw(FileException){
         ofs.flush();
         ofs.close();
         saved = true;
-        //todo protect with read for user (no prev for group and other)
+        //protect with read for user (no prev for group and other)
+        setFilePermissions( sFile, S_IRUSR );
+        setFilePermissions(*p, S_IRUSR|S_IXUSR );
     }
 }
 
