@@ -73,8 +73,8 @@ void PrintUsageMessage::usageMessage(string cmdName) {
     cout << cmdName << " [options] <file>" << endl;
     cout << endl;
     cout << "Usage for sealing own files:" << endl;
-//    cout << cmdName << " [options] --seal <file>" << endl;
-    cout << cmdName << " [options] --sign <file>" << endl;
+    cout << cmdName << " [options] --seal <file>" << endl;
+//    cout << cmdName << " [options] --sign <file>" << endl;
     cout << endl;
     cout << "  General options:" << endl;
     cout << "  --verbose         enable verbose output" << endl;
@@ -210,6 +210,12 @@ string *Cealr::getOptString(const string &question) {
 }
 
 Cealr::Cealr(const int argc, const char **argv) {
+//#if CMAKE_BUILD_TYPE==DEBUG
+//    //todo oz: Only for testing/debugging
+//    if (isatty(fileno(stdin))) {
+//        getSingleCharacterAnswer("Attach debugger?", {'Y', 'N'}, 'N');
+//    }
+//#endif
     cmdName = argc > 0 ? argv[0] : CEALR;
     verbose = false;
 
