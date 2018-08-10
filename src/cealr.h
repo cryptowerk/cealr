@@ -13,11 +13,11 @@
 #define CEALR_H
 static const char *const CEALR = "cealr";
 
-#if CMAKE_BUILD_TYPE==DEBUG
-static const char *const DEFAULT_SERVER = "http://localhost:8080/platform";
-#else
+//#if CMAKE_BUILD_TYPE==DEBUG
+//static const char *const DEFAULT_SERVER = "http://localhost:8080/platform";
+//#else
 static const char *const DEFAULT_SERVER = "https://devapi1.cryptowerk.com/platform";
-#endif // if CMAKE_BUILD_TYPE==DEBUG
+//#endif // if CMAKE_BUILD_TYPE==DEBUG
 
 static const int MAX_BUFFER_SIZE = 0x4000;
 
@@ -66,11 +66,11 @@ private:
     bool registerClient;
     bool seal;
     bool sign;
+    vector<string> fileNames;
     string hexHashes;
     string docNames;
     char *signature;
     Properties *properties;
-
     void initFromPropIfNull(string **, string);
     string *getStringMatching(const string &question, regex regexp);
     string *getOptString(const string &question);
@@ -78,6 +78,7 @@ private:
     string *getPassword(const string &question, int minLength, int minDigits, int minSmall, int minCaps);
     string *readPassword();
     string *hashFile(string sFile);
+    string toHex(const unsigned char *hash, int size );
 
 public:
     Cealr(int, const char**);
@@ -88,7 +89,7 @@ public:
 
     JSON creds(const string &password) const;
 
-    void addToHashes(const string &filename);
+    void addToHashes(const string &fileName);
 
     string *getEnvAsString(const string &) const;
 

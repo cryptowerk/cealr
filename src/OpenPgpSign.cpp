@@ -32,7 +32,6 @@ OpenPgpSign::OpenPgpSign(gpgme_sig_mode_t _sigMode) {
     gpgme_set_textmode(ctx, 1);
     // Enable ASCII armor on the context
     gpgme_set_armor(ctx, 1);
-    // end constructor
 }
 
 OpenPgpSign::~OpenPgpSign() {

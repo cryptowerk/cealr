@@ -17,15 +17,6 @@
 #include <zconf.h>
 #include <sys/termios.h>
 
-string toHex(const unsigned char hash[SHA256_DIGEST_LENGTH]) {
-    stringstream buf;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        buf << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-
-    return buf.str();
-}
-
 string *Cealr::hashFile(const string sFile) {
     ifstream ifs(sFile.c_str(), ifstream::binary);
     string *hashHex = nullptr;
@@ -56,7 +47,7 @@ string *Cealr::hashFile(const string sFile) {
         ifs.close();
         unsigned char hash[SHA256_DIGEST_LENGTH];
         SHA256_Final(hash, &sha256Ctx);
-        hashHex = new string(toHex(hash));
+        hashHex = new string(toHex(hash, SHA256_DIGEST_LENGTH));
     } else {
         stringstream what;
         what << "Cannot open file '" << sFile << "'.";
@@ -64,6 +55,15 @@ string *Cealr::hashFile(const string sFile) {
         throw PrintUsageMessage(cmdName, new string(sWhat));
     }
     return hashHex;
+}
+
+string Cealr::toHex(const unsigned char *hash, const int size ) {
+    stringstream buf;
+    for(int i = 0; i < size; i++) {
+        buf << hex << setw(2) << setfill('0') << (int)hash[i];
+    }
+
+    return buf.str();
 }
 
 void PrintUsageMessage::usageMessage(string cmdName) {
@@ -210,12 +210,12 @@ string *Cealr::getOptString(const string &question) {
 }
 
 Cealr::Cealr(const int argc, const char **argv) {
-//#if CMAKE_BUILD_TYPE==DEBUG
-//    //todo oz: Only for testing/debugging
-//    if (isatty(fileno(stdin))) {
-//        getSingleCharacterAnswer("Attach debugger?", {'Y', 'N'}, 'N');
-//    }
-//#endif
+#if CMAKE_BUILD_TYPE==DEBUG
+    //todo oz: Only for testing/debugging
+    if (isatty(fileno(stdin))) {
+        getSingleCharacterAnswer("Attach debugger?", {'Y', 'N'}, 'N');
+    }
+#endif
     cmdName = argc > 0 ? argv[0] : CEALR;
     verbose = false;
 
@@ -282,20 +282,14 @@ Cealr::Cealr(const int argc, const char **argv) {
     }
 }
 
-void Cealr::addToHashes(const string &filename) {
-    string *hashHex = hashFile(filename);
+void Cealr::addToHashes(const string &fileName) {
+    string *hashHex = hashFile(fileName);
     if (!hexHashes.empty()) {
         hexHashes.append(",");
     }
     hexHashes.append(*hashHex);
-    if (sign) {
-        OpenPgpSign openPgpSign(GPGME_SIG_MODE_DETACH);
-        signature = openPgpSign.sign(filename);
-        if (verbose) {
-            cout << "Signature: " << signature;
-        }
-    }
-    string *docName = fileNameWithoutPath(filename);
+    fileNames.push_back(fileName);
+    string *docName = fileNameWithoutPath(fileName);
     if (!docNames.empty()) {
         docNames.append(",");
     }
@@ -399,6 +393,15 @@ void Cealr::run() {
         throw PrintUsageMessage(cmdName, new string("Missing mode of operation. You might want to try option '--help'."));
     }
     if (seal) {
+        if (sign) {
+            OpenPgpSign openPgpSign(GPGME_SIG_MODE_DETACH);
+            for (const string &fileName:fileNames) {
+                signature = openPgpSign.sign(fileName);
+                if (verbose) {
+                    cout << "Signature: " << fileName << endl << signature << endl;
+                }
+            }
+        }
         cout  << endl << "Contacting server \""  << *server << "\" to seal your file \"" << docNames << "\""  << endl << endl;
         sealFile();
         cout << "File \"" << docNames << "\" is successfully registered with Cryptowerk." << endl;
@@ -614,6 +617,10 @@ int main(int argc, const char **argv) {
         return exitVal;
     }
     catch (PgpSignException &e){
+        cerr << e.what();
+        exit(1);
+    }
+    catch (FileException &e){
         cerr << e.what();
         exit(1);
     }
