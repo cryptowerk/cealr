@@ -24,9 +24,9 @@ using namespace std;
 
 class FileException: public exception {
 private:
-    string *_file;
+    runtime_error errMsg;
 public:
-    FileException(const string &file);
+    explicit FileException(const string &file);
 
     virtual const char* what();
 };
@@ -36,10 +36,10 @@ private:
     string sFile;
     bool saved;
 public:
-    Properties(const string&);
+    explicit Properties(const string&);
     Properties();
-    ~Properties();
-    static string trim(const string str);
+
+    static string trim(string str);
 
     void readFromFile();
 
@@ -51,7 +51,7 @@ public:
 
     friend ostream &operator<<(ostream &, const Properties &);
 
-    void save() throw(FileException);
+    void save();
     bool isSaved();
 
     void setFile(const string &fileName);

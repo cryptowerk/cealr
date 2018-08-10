@@ -9,16 +9,13 @@
  *
  */
 
-//#include <cursesf.h>
 #include "Properties.h"
 #include "fileUtil.h"
 
-FileException::FileException(const string &file) {
-    _file = (string *) &file;
-}
+FileException::FileException(const string &file) : errMsg(("Error on opening file \"" + (file) + "\"").c_str()) {}
 
 const char *FileException::what() {
-    return ("Error on opening file \"" + (*_file) + "\"").c_str();
+    return errMsg.what();
 }
 
 //class Properties: public map<string,string> {
@@ -71,7 +68,7 @@ void Properties::readFromFile() {
 //string Properties::trim(basic_string<char, char_traits<char>, allocator<char>> str) {
 string Properties::trim(const string str) {
     string s = str;
-    unsigned int p;
+    unsigned long p;
     while ((p = s.length()) > 0 && (unsigned char) s[p - 1] <= ' ')
         s.resize(p - 1);
     while (s.length() > 0 && (unsigned char) s[0] <= ' ')
@@ -79,11 +76,11 @@ string Properties::trim(const string str) {
     return s;
 }
 
-void Properties::save() throw(FileException){
-    string *p = superPath(sFile);
-    if (p!=NULL) {
-        mkdirs(*p);
-        setFilePermissions(*p, S_IRUSR|S_IWUSR|S_IXUSR );
+void Properties::save() {
+    string *pth = superPath(sFile);
+    if (pth!= nullptr) {
+        mkdirs(*pth);
+        setFilePermissions(*pth, S_IRUSR|S_IWUSR|S_IXUSR );
         if (fileExists(sFile)) {
             setFilePermissions(sFile, S_IRUSR | S_IWUSR);
         }
@@ -99,11 +96,8 @@ void Properties::save() throw(FileException){
         saved = true;
         //protect with read for user (no prev for group and other)
         setFilePermissions( sFile, S_IRUSR );
-        setFilePermissions(*p, S_IRUSR|S_IXUSR );
+        setFilePermissions(*pth, S_IRUSR|S_IXUSR );
     }
-}
-
-Properties::~Properties() {
 }
 
 bool Properties::operator==(const Properties &properties) const {

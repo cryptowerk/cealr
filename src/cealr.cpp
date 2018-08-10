@@ -12,6 +12,7 @@
 #include "cealr.h"
 #include "CurlUtil.h"
 #include "fileUtil.h"
+#include "OpenPgpSign.h"
 #include <openssl/sha.h>
 #include <zconf.h>
 #include <sys/termios.h>
@@ -27,13 +28,13 @@ string toHex(const unsigned char hash[SHA256_DIGEST_LENGTH]) {
 
 string *Cealr::hashFile(const string sFile) {
     ifstream ifs(sFile.c_str(), ifstream::binary);
-    string *hashHex = NULL;
+    string *hashHex = nullptr;
     if (ifs.is_open()) {
         SHA256_CTX sha256Ctx;
         SHA256_Init(&sha256Ctx);
         ifs.unsetf(ios::skipws);
         ifs.seekg(0, std::ios::end);
-        unsigned long size = (unsigned long)ifs.tellg();
+        auto size = (unsigned long)ifs.tellg();
         ifs.seekg(0, std::ios::beg);
 
         // reserve capacity
@@ -72,7 +73,8 @@ void PrintUsageMessage::usageMessage(string cmdName) {
     cout << cmdName << " [options] <file>" << endl;
     cout << endl;
     cout << "Usage for sealing own files:" << endl;
-    cout << cmdName << " [options] --seal <file>" << endl;
+//    cout << cmdName << " [options] --seal <file>" << endl;
+    cout << cmdName << " [options] --sign <file>" << endl;
     cout << endl;
     cout << "  General options:" << endl;
     cout << "  --verbose         enable verbose output" << endl;
@@ -104,7 +106,7 @@ char Cealr::getSingleCharacterAnswer(const string &question, const set<char> val
     do {
         cout << question;
         cin.clear();
-        string input = "";
+        string input;
         if (isatty(fileno(stdin))) {
             static struct termios currentTerminal, singleCharTerminal;
             tcgetattr(STDIN_FILENO, &currentTerminal);
@@ -134,7 +136,7 @@ char Cealr::getSingleCharacterAnswer(const string &question, const set<char> val
 
 string *Cealr::getStringMatching(const string &question, regex regexp) {
     bool ok;
-    string input("");
+    string input;
     do {
         cout << question;
         cin.clear();
@@ -151,7 +153,7 @@ string *Cealr::getStringMatching(const string &question, regex regexp) {
 
 string *Cealr::getPassword(const string &question, int minLength, int minDigits, int minSmall, int minCaps) {
     bool ok = false;
-    string input("");
+    string input;
     do {
         if (isatty(fileno(stdin))) {
             cin.clear();
@@ -199,12 +201,12 @@ string *Cealr::getPassword(const string &question, int minLength, int minDigits,
 }
 
 string *Cealr::getOptString(const string &question) {
-    string input = "";
+    string input;
     cout << question;
     cin.clear();
     getline(cin, input);
     input = Properties::trim(input);
-    return (input[0]) == 0 ? NULL : new string(input);
+    return (input[0]) == 0 ? nullptr : new string(input);
 }
 
 Cealr::Cealr(const int argc, const char **argv) {
@@ -218,14 +220,16 @@ Cealr::Cealr(const int argc, const char **argv) {
     registerArgFound = false;
     registerClient   = false;
     seal             = false;
-    server           = NULL;
-    email            = NULL;
-    apiKey           = NULL;
-    apiCredential    = NULL;
+    sign             = false;
+    server           = nullptr;
+    email            = nullptr;
+    apiKey           = nullptr;
+    apiCredential    = nullptr;
 
     for (int i = 1; i < argc; i++) {
-        const string arg = argv[i];
+        string arg = argv[i];
         bool hasMoreArgs = i + 1 < argc;
+        bool callAddToHashes = false;
         if (arg == "--verbose") {
             verbose = true;
         } else if (arg == "--register" || arg == "--login") {
@@ -233,7 +237,13 @@ Cealr::Cealr(const int argc, const char **argv) {
             registerArgFound = true;
         } else if (i + 1 < argc && arg == "--seal") {
             seal = true;
-            addToHashes(argv[++i]);
+            callAddToHashes = true;
+            arg = argv[++i];
+        } else if (i + 1 < argc && arg == "--sign") {
+            seal = true;
+            sign = true;
+            callAddToHashes = true;
+            arg = argv[++i];
         } else if (hasMoreArgs && arg == "--server") {
             server = new string(argv[++i]);
         } else if (hasMoreArgs && arg == "--apiKey") {
@@ -243,6 +253,9 @@ Cealr::Cealr(const int argc, const char **argv) {
         } else if (arg == "--help" || arg == "-h") {
             throw PrintUsageMessage(cmdName);
         } else {
+            callAddToHashes = true;
+        }
+        if (callAddToHashes) {
             addToHashes(arg);
         }
     }
@@ -265,13 +278,19 @@ Cealr::Cealr(const int argc, const char **argv) {
 
 void Cealr::addToHashes(const string &filename) {
     string *hashHex = hashFile(filename);
-    if (hexHashes.size() > 0) {
+    if (!hexHashes.empty()) {
         hexHashes.append(",");
     }
     hexHashes.append(*hashHex);
-
+    if (sign) {
+        OpenPgpSign openPgpSign(GPGME_SIG_MODE_DETACH);
+        signature = openPgpSign.sign(filename);
+        if (verbose) {
+            cout << "Signature: " << signature;
+        }
+    }
     string *docName = fileNameWithoutPath(filename);
-    if (docNames.size() > 0) {
+    if (!docNames.empty()) {
         docNames.append(",");
     }
     docNames.append(*docName);
@@ -279,7 +298,7 @@ void Cealr::addToHashes(const string &filename) {
 
 void Cealr::run() {
     if (!server) {
-        if (!(*properties)["server"].size()) {
+        if ((*properties)["server"].empty()) {
             server      = getEnvAsString("CEALR_SERVER");
             if (!server){
                 server  = new string(DEFAULT_SERVER);
@@ -289,7 +308,7 @@ void Cealr::run() {
         }
     }
     //in case of option --seal
-    if (registerArgFound || (seal && !apiKey && !(*properties)["apiKey"].size() && !(*properties)["email"].size())) {
+    if (registerArgFound || (seal && !apiKey && (*properties)["apiKey"].empty() && (*properties)["email"].empty())) {
         // ask if seal without apiKey
         if (!registerArgFound) {
             registerClient = getSingleCharacterAnswer("Are you already registered with Cryptowerk? [y/N]: ", {'Y', 'N'}, 'N') == 'N';
@@ -297,7 +316,7 @@ void Cealr::run() {
         regex email_pattern("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", regex_constants::icase);
         if (email && !regex_match(*email, email_pattern)) {
             cout << "The parameter \"--email " << email << "\" was not accepted as a valid email address." << endl;
-            email = NULL;
+            email = nullptr;
         }
         //in case of registration ask for email, password, first name, last name and optional for org
         //todo oz: email = new string("olaf.zumpe@gmail.com");
@@ -333,7 +352,7 @@ void Cealr::run() {
         properties->erase("apiKey");
         properties->erase("apiCredential");
         properties->save();
-        // todo We could not exit here, if user just has been created we could wait in cealr (password entry) for activation
+        // todo No need to exit here, if user just has been created we could wait in cealr (password entry) for activation
         // todo or we exit here and they just need to start cealr again after activation
         if (registerClient){
             exit(1);
@@ -370,7 +389,7 @@ void Cealr::run() {
             properties->save();
         }
     }
-    if (hexHashes.size()==0) {
+    if (hexHashes.empty()) {
         throw PrintUsageMessage(cmdName, new string("Missing mode of operation. You might want to try option '--help'."));
     }
     if (seal) {
@@ -389,7 +408,7 @@ void Cealr::run() {
                 for (auto &doc : docs) {
                     string docName = doc["name"];
                     cout << "Submitted at " << formatTime(doc["submittedAt"], "%H:%M:%ST%Y-%m-%d");
-                    if (docName == "") {
+                    if (docName.empty()) {
                         cout << " without name";
                     } else {
                         cout << " as " << docName;
@@ -428,7 +447,7 @@ string Cealr::formatTime(const time_t timestamp, const string format) {
 JSON Cealr::sealFile() const {
     JSON json;
     json["name"]                = docNames;
-    json["contentType"]         = *new string("applicaton/octet-stream");
+    json["contentType"]         = *new string("application/octet-stream");
     json["store"]               = true; //
     json["hashes"]              = hexHashes;
     json["publiclyRetrievable"] = true;
@@ -451,7 +470,7 @@ JSON Cealr::sealFile() const {
 JSON Cealr::verifySeal() const {
     JSON json;
     json["name"]             = docNames;
-    json["contentType"]      = *new string("applicaton/octet-stream");
+    json["contentType"]      = *new string("application/octet-stream");
     json["retrievalDocHash"] = hexHashes;
     stringstream url;
     url << *server << "/API/v5/verify";
@@ -500,7 +519,7 @@ JSON Cealr::creds(const string &password) const {
 }
 
 string *Cealr::readPassword() {
-    string *password = NULL;
+    string *password = nullptr;
     initFromPropIfNull(&password, "password");
     if (!password) {
         password = getEnvAsString("CEALR_PASSWORD");
@@ -515,7 +534,7 @@ string *Cealr::readPassword() {
 }
 
 string *Cealr::getEnvAsString(const string &envKey) const {
-    string *envStr = NULL;
+    string *envStr = nullptr;
     char *envPwd = getenv(envKey.c_str());
     if (envPwd) {
         envStr = new string(envPwd);
@@ -524,7 +543,7 @@ string *Cealr::getEnvAsString(const string &envKey) const {
 }
 
 void Cealr::initFromPropIfNull(string **pString, const string key) {
-    if (*pString == NULL && properties->count(key)) {
+    if (*pString == nullptr && properties->count(key)) {
         *pString = new string((*properties)[key]);
     }
 }
@@ -532,58 +551,45 @@ void Cealr::initFromPropIfNull(string **pString, const string key) {
 Cealr::~Cealr() {
     if (server) {
         delete server;
-        server = NULL;
+        server = nullptr;
     }
     if (apiKey) {
         delete apiKey;
-        apiKey = NULL;
+        apiKey = nullptr;
     }
     if (apiCredential) {
         delete apiCredential;
-        apiCredential = NULL;
+        apiCredential = nullptr;
     }
     if (email) {
         delete email;
-        email = NULL;
+        email = nullptr;
     }
     if (properties) {
         delete properties;
-        properties = NULL;
+        properties = nullptr;
     }
 
 }
 
-PrintUsageMessage::PrintUsageMessage(const string &command) {
+PrintUsageMessage::PrintUsageMessage(const string &command) : errMsg("") {
     cmdName = command;
-    errMsg = (string *) NULL;
 }
 
 const char *PrintUsageMessage::what() {
-    if (errMsg) {
-        return errMsg->c_str();
-    }
-    return NULL;
+    return errMsg.what();
 }
 
 string PrintUsageMessage::getCmd() {
     return cmdName;
 }
 
-PrintUsageMessage::PrintUsageMessage(const string command, string *error) {
+PrintUsageMessage::PrintUsageMessage(const string command, string *error) : errMsg(error->c_str()) {
     cmdName = command;
-    errMsg = error;
 }
 
-PrintUsageMessage::~PrintUsageMessage() _NOEXCEPT {
-    if (errMsg != NULL) {
-        delete errMsg;
-        errMsg = NULL;
-    }
-}
-
-PrintUsageMessage::PrintUsageMessage() {
+PrintUsageMessage::PrintUsageMessage() : errMsg("") {
     cmdName = "cealr";
-    errMsg = NULL;
 }
 
 //  --server https://devapi1.cryptowerk.com/platform --apiKey TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= --api8888Credential vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=
@@ -593,13 +599,17 @@ int main(int argc, const char **argv) {
         cealr.run();
     } catch (PrintUsageMessage &e) {
         int exitVal = 0;
-        if (e.what()) {
+        if (*e.what()) {
             string errorMsg(e.what());
             cerr << errorMsg << endl;
             exitVal = 1;
         }
         e.usageMessage(e.getCmd());
         return exitVal;
+    }
+    catch (PgpSignException &e){
+        cerr << e.what();
+        exit(1);
     }
 }
 

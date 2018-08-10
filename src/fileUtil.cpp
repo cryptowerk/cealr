@@ -12,7 +12,7 @@
 #include "fileUtil.h"
 
 bool dirExists(const string &path) {
-    struct stat inf;
+    struct stat inf{};
     if (stat(path.c_str(), &inf) != 0) {
         return false;
     }
@@ -20,7 +20,7 @@ bool dirExists(const string &path) {
 }
 
 bool fileExists(const string &path) {
-    struct stat inf;
+    struct stat inf{};
     if (stat(path.c_str(), &inf) != 0) {
         return false;
     }
@@ -29,7 +29,7 @@ bool fileExists(const string &path) {
 
 string *superPath(const string path) {
     unsigned long pos = path.find_last_of(PATH_SEPARATOR);
-    return (pos == string::npos) ? NULL : new string(path.substr(0, pos));
+    return (pos == string::npos) ? nullptr : new string(path.substr(0, pos));
 }
 
 bool mkdirs(const std::string &path) {
@@ -37,7 +37,7 @@ bool mkdirs(const std::string &path) {
 
     if (!success) {
         string *sSuperPath = superPath(path);
-        if (sSuperPath != NULL) {
+        if (sSuperPath != nullptr) {
             success = mkdirs(*sSuperPath);
             delete sSuperPath;
             if (success) {
@@ -56,12 +56,12 @@ bool mkdirs(const std::string &path) {
 
 string *fileNameWithoutPath(const string path) {
     unsigned long pos = path.find_last_of(PATH_SEPARATOR);
-    return (pos == string::npos) ? NULL : new string(path.substr(pos + 1));
+    return (pos == string::npos) ? nullptr : new string(path.substr(pos + 1));
 }
 
 
 mode_t getFilePermissions( const string path) {
-    struct stat attributes;
+    struct stat attributes{};
     mode_t attr = 0;
 
     if (stat(path.c_str(), &attributes) >= 0) {

@@ -1,6 +1,16 @@
 # cealr
 Command line tool for sealing files with the Cryptowerk Blockchain Enablement Kit API
 
+# Building
+###Build requires:
+Fedora/Ubuntu name
+
+* cmake (http://www.cmake.org/) - cmake/cmake
+* gcc (http://gcc.gnu.org/) - gcc/gcc
+* gpgme (http://www.gnupg.org/) - gpgme-devel/libgpgme11-dev
+* libcurl (http://curl.haxx.se/libcurl/) - libcurl-devel/libcurl4-openssl-dev
+* openssl (http://www.openssl.org/) - openssl-devel/libssl-dev
+
 ### Pre-Requisites:
 ```console
 $ brew install cmake

@@ -10,6 +10,7 @@
  */
 
 #include "CurlUtil.h"
+#include <utility>
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t bytes = size * nmemb;
@@ -20,7 +21,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
 CurlUtil::CurlUtil(string url, bool bVerbose) {
     setUrl(url);
     setVerbose(bVerbose);
-    headers = NULL;
+    headers = nullptr;
     returnData = new string();
     curl = curl_easy_init();
     //todo curlUtilException
@@ -33,9 +34,9 @@ CurlUtil::CurlUtil(string url, bool bVerbose) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, returnData);
 }
 
-CurlUtil::CurlUtil(string url): CurlUtil(url, false) {}
+CurlUtil::CurlUtil(string url): CurlUtil(std::move(url), false) {}
 
-CurlUtil::CurlUtil(): CurlUtil(NULL, false) {}
+CurlUtil::CurlUtil(): CurlUtil(nullptr, false) {}
 
 CurlUtil::~CurlUtil() {
     if (headers) {

@@ -384,6 +384,8 @@ else()
   set( _gpgme_homepage "http://www.gnupg.org/related_software/gpgme" )
 endif()
 
+include(FeatureSummary)
+
 set_package_properties(Gpgme PROPERTIES
         DESCRIPTION "The GnuPG Made Easy (GPGME) library)"
         URL ${_gpgme_homepage})

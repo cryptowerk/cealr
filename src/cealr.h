@@ -36,10 +36,12 @@ using namespace std;
 
 class PrintUsageMessage : public exception {
 private:
-    string *errMsg;
+    runtime_error errMsg;
     string cmdName;
 public:
-    PrintUsageMessage(const string &);
+    explicit PrintUsageMessage(const string &);
+
+    PrintUsageMessage(string, string * );
 
     PrintUsageMessage();
 
@@ -47,11 +49,9 @@ public:
 
     string getCmd();
 
-    PrintUsageMessage(const string, string * );
-
     void usageMessage(string cmdName);
 
-    virtual ~PrintUsageMessage() _NOEXCEPT;
+//    ~PrintUsageMessage()/* _NOEXCEPT override*/;
 };
 
 class Cealr {
@@ -65,24 +65,26 @@ private:
     bool registerArgFound;
     bool registerClient;
     bool seal;
+    bool sign;
     string hexHashes;
     string docNames;
+    char *signature;
     Properties *properties;
 
-    void initFromPropIfNull(string **, const string);
+    void initFromPropIfNull(string **, string);
     string *getStringMatching(const string &question, regex regexp);
     string *getOptString(const string &question);
-    char getSingleCharacterAnswer(const string &question, const std::__1::set<char> validAnswers, const char defaultAnswer);
+    char getSingleCharacterAnswer(const string &question, std::__1::set<char> validAnswers, char defaultAnswer);
     string *getPassword(const string &question, int minLength, int minDigits, int minSmall, int minCaps);
     string *readPassword();
-    string *hashFile(const string sFile);
+    string *hashFile(string sFile);
 
 public:
-    Cealr(const int, const char**);
+    Cealr(int, const char**);
     virtual ~Cealr();
     void run();
 
-    JSON registerUser(const string &firstname, const string &lastName, const string *organization) const;
+    JSON registerUser(const string &firstName, const string &lastName, const string *organization) const;
 
     JSON creds(const string &password) const;
 
@@ -93,7 +95,7 @@ public:
     JSON sealFile() const;
     JSON verifySeal() const;
 
-    string formatTime(const time_t timestamp, const string format);
+    string formatTime(time_t timestamp, string format);
 };
 
 #endif //CEALR_H

@@ -12,7 +12,7 @@
 #ifndef CEALR_FILEUTIL_H
 #define CEALR_FILEUTIL_H
 
-#ifdef _WIN32
+#ifdef WIN32
 // Definiitions to exclude selected header files.
 
 //#define WIN32_LEAN_AND_MEAN
