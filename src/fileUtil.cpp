@@ -56,7 +56,7 @@ bool mkdirs(const std::string &path) {
 
 string *fileNameWithoutPath(const string path) {
     unsigned long pos = path.find_last_of(PATH_SEPARATOR);
-    return (pos == string::npos) ? nullptr : new string(path.substr(pos + 1));
+    return new string((pos == string::npos) ? path:path.substr(pos + 1));
 }
 
 
