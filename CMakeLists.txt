@@ -28,6 +28,13 @@ add_library(curl UNKNOWN IMPORTED)
 add_library(openssl UNKNOWN IMPORTED)
 set_property(TARGET curl PROPERTY IMPORTED_LOCATION "${CURL_LIBRARIES}")
 
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("Debug build.")
+ELSEIF(CMAKE_BUILD_TYPE MATCHES Release)
+  message("Release build.")
+ELSE()
+  message("Some other build type.")
+ENDIF()
 
 add_executable(cealr ${SOURCE_FILES})
 target_link_libraries(cealr ssl crypto curl gpgme)
