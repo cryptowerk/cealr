@@ -13,11 +13,11 @@
 #define CEALR_H
 static const char *const CEALR = "cealr";
 
-//#if CMAKE_BUILD_TYPE==DEBUG
-//static const char *const DEFAULT_SERVER = "http://localhost:8080/platform";
-//#else
+#ifdef NDEBUG
 static const char *const DEFAULT_SERVER = "https://devapi1.cryptowerk.com/platform";
-//#endif // if CMAKE_BUILD_TYPE==DEBUG
+#else
+static const char *const DEFAULT_SERVER = "http://localhost:8080/platform";
+#endif // if CMAKE_BUILD_TYPE==DEBUG
 
 static const int MAX_BUFFER_SIZE = 0x4000;
 

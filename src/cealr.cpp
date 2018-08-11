@@ -210,7 +210,7 @@ string *Cealr::getOptString(const string &question) {
 }
 
 Cealr::Cealr(const int argc, const char **argv) {
-#if CMAKE_BUILD_TYPE==DEBUG
+#ifndef NDEBUG
     //todo oz: Only for testing/debugging
     if (isatty(fileno(stdin))) {
         getSingleCharacterAnswer("Attach debugger?", {'Y', 'N'}, 'N');
