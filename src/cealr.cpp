@@ -67,8 +67,11 @@ string Cealr::toHex(const unsigned char *hash, const int size ) {
 }
 
 void PrintUsageMessage::usageMessage(string cmdName) {
+    const char* version =
+#include "../VERSION"
+;
     const char *sampleServerUrl = "https://devapi1.cryptowerk.com/platform";
-
+    cout << "cealr v" << version << endl;
     cout << "Proof that file has not changed since registration:" << endl;
     cout << cmdName << " [options] <file>" << endl;
     cout << endl;
