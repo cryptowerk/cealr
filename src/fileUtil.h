@@ -103,6 +103,7 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 #else
 #define PATH_SEPARATOR '/'
 #include <string>
+#include <cstring>
 #include <cstdlib>
 #include <iostream>
 #include <sys/stat.h>

@@ -74,7 +74,7 @@ private:
     void initFromPropIfNull(string **, string);
     string *getStringMatching(const string &question, regex regexp);
     string *getOptString(const string &question);
-    char getSingleCharacterAnswer(const string &question, std::__1::set<char> validAnswers, char defaultAnswer);
+    char getSingleCharacterAnswer(const string &question, set<char> validAnswers, char defaultAnswer);
     string *getPassword(const string &question, int minLength, int minDigits, int minSmall, int minCaps);
     string *readPassword();
     string *hashFile(string sFile);
