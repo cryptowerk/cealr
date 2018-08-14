@@ -4,3 +4,4 @@
 VERSION=`(cat VERSION | tr -d '"')`
 cd build/release
 fpm -s dir -t deb -n cealr -v $VERSION --prefix /usr/local/bin cealr
+fpm -s dir -t rpm -n cealr -v $VERSION --prefix /usr/local/bin cealr
