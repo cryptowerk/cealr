@@ -1,5 +1,5 @@
 /*
- * _____ _____  _____  ____   ______
+ * _____ _____  _____  ___    ______
  *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
  *|  |__|   __|   _   |   |__|
  *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
@@ -102,7 +102,7 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 #define PATH_SEPARATOR '\\'
 #else
 #define PATH_SEPARATOR '/'
-#include <string>
+//#include <string>
 #include <cstring>
 #include <cstdlib>
 #include <iostream>

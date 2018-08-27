@@ -1,5 +1,5 @@
 /*
- * _____ _____  _____  ____   ______
+ * _____ _____  _____  ___    ______
  *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
  *|  |__|   __|   _   |   |__|
  *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
@@ -12,7 +12,6 @@
 #include "cealr.h"
 #include "CurlUtil.h"
 #include "fileUtil.h"
-#include "OpenPgpSign.h"
 #include <openssl/sha.h>
 #include <zconf.h>
 #include <sys/termios.h>
@@ -25,7 +24,7 @@ string *Cealr::hashFile(const string sFile) {
         SHA256_Init(&sha256Ctx);
         ifs.unsetf(ios::skipws);
         ifs.seekg(0, std::ios::end);
-        auto size = (unsigned long)ifs.tellg();
+        auto size = (unsigned long) ifs.tellg();
         ifs.seekg(0, std::ios::beg);
 
         // reserve capacity
@@ -37,13 +36,13 @@ string *Cealr::hashFile(const string sFile) {
             ifs.read(buffer, bufSize);
             SHA256_Update(&sha256Ctx, &buffer, bufSize);
             // since read does not return how many bytes are read, we have to keep track ourselves
-            if ((ptr += bufSize)>size) {
-                bufSize -= ptr-size;
+            if ((ptr += bufSize) > size) {
+                bufSize -= ptr - size;
                 ptr = size;
             }
             // ifs.eof() is only true if we read beyond eof. We are keeping track of the remaining bytes to read and read
             // never more than available, so eof is never triggered and we have to exit based on bufSize==0
-        } while(bufSize);
+        } while (bufSize);
         ifs.close();
         unsigned char hash[SHA256_DIGEST_LENGTH];
         SHA256_Final(hash, &sha256Ctx);
@@ -57,10 +56,10 @@ string *Cealr::hashFile(const string sFile) {
     return hashHex;
 }
 
-string Cealr::toHex(const unsigned char *hash, const int size ) {
+string Cealr::toHex(const unsigned char *hash, const int size) {
     stringstream buf;
-    for(int i = 0; i < size; i++) {
-        buf << hex << setw(2) << setfill('0') << (int)hash[i];
+    for (int i = 0; i < size; i++) {
+        buf << hex << setw(2) << setfill('0') << (int) hash[i];
     }
 
     return buf.str();
@@ -76,8 +75,8 @@ void PrintUsageMessage::usageMessage(string cmdName) {
     cout << cmdName << " [options] <file>" << endl;
     cout << endl;
     cout << "Usage for sealing own files:" << endl;
-    cout << cmdName << " [options] --seal <file>" << endl;
-//    cout << cmdName << " [options] --sign <file>" << endl;
+    cout << cmdName << " [options] --seal <file>[@<version>]" << endl;
+    cout << cmdName << " [options] --sign <file>[@<version>]" << endl;
     cout << endl;
     cout << "  General options:" << endl;
     cout << "  --verbose         enable verbose output" << endl;
@@ -85,14 +84,17 @@ void PrintUsageMessage::usageMessage(string cmdName) {
     cout << endl;
     cout << "  Mode of operation, one of:" << endl;
     cout << "  --help            this help" << endl;
-    cout << "  --register        to register a free account with CryptoWerk and store account credentials in " << DEFAULT_PROPERTIES  << endl;
+    cout << "  --register        to register a free account with CryptoWerk and store account credentials in "
+         << DEFAULT_PROPERTIES << endl;
     cout << "  --seal [filename] register a document in blockchain(s)" << endl;
     cout << endl;
     cout << "Additional options with --seal:" << endl;
     cout << "  --update          Email update when submitted file is verifiable in blockchain" << endl;
     cout << "  --apiKey          API key, e.g. '" << "TskZZ8Zc2QzE3G+lxvUnWPKMk27Ucd1tm9K/YSPXWww=" << "'" << endl;
-    cout << "  --apiCredential   API credential, e.g. ' " << "vV/2buaDD5aAcCQxCtk4WRJs/yK+BewThR1qUXikdJo=" << "'" << endl;
-    cout << "  --login           to re-use an already registered account with CryptoWerk (or simply get the file " << DEFAULT_PROPERTIES << " from a system where you previously registered your account" << endl;
+    cout << "  --apiCredential   API credential, e.g. ' " << "vV/2buaDD5aAcCQxCtk4WRJs/yK+BewThR1qUXikdJo=" << "'"
+         << endl;
+    cout << "  --login           to re-use an already registered account with CryptoWerk (or simply get the file "
+         << DEFAULT_PROPERTIES << " from a system where you previously registered your account" << endl;
     cout << endl;
     cout << "Example for sealing:" << endl;
     cout << "  echo 'Hello, world.' >hello.txt" << endl;
@@ -227,13 +229,13 @@ Cealr::Cealr(const int argc, const char **argv) {
 
     // should call default constructor
     registerArgFound = false;
-    registerClient   = false;
-    seal             = false;
-    sign             = false;
-    server           = nullptr;
-    email            = nullptr;
-    apiKey           = nullptr;
-    apiCredential    = nullptr;
+    registerClient  = false;
+    seal = false;
+    sign = false;
+    server = nullptr;
+    email = nullptr;
+    apiKey = nullptr;
+    apiCredential = nullptr;
 
     for (int i = 1; i < argc; i++) {
         string arg = argv[i];
@@ -265,7 +267,24 @@ Cealr::Cealr(const int argc, const char **argv) {
             callAddToHashes = true;
         }
         if (callAddToHashes) {
-            addToHashes(arg);
+            string *version = nullptr;
+            string *fileName = &arg;
+            unsigned long verPos = arg.find_last_of('@');
+            if (verPos != string::npos) {
+                fileName = new string(arg.substr(0, verPos));
+                version = new string(arg.substr(verPos + 1));
+            } else {
+                if (((i + 1) < argc) && (*argv[i + 1] == '@')) {
+                    version = new string(argv[++i] + 1); // skip @ character
+                }
+            }
+            addToHashes(*fileName, version);
+            if (version) {
+                delete version;
+                if (fileName != &arg) {
+                    delete fileName;
+                }
+            }
         }
     }
     if (apiKey && !apiCredential) {
@@ -277,15 +296,15 @@ Cealr::Cealr(const int argc, const char **argv) {
 
         throw PrintUsageMessage(cmdName, new string(what.str()));
     }
-    if (!apiKey){
+    if (!apiKey) {
         apiKey = getEnvAsString("CEALR_APIKEY");
     }
-    if (!apiCredential){
+    if (!apiCredential) {
         apiCredential = getEnvAsString("CEALR_APICREDENTIAL");
     }
 }
 
-void Cealr::addToHashes(const string &fileName) {
+void Cealr::addToHashes(const string &fileName, const string *version) {
     string *hashHex = hashFile(fileName);
     if (!hexHashes.empty()) {
         hexHashes.append(",");
@@ -297,21 +316,21 @@ void Cealr::addToHashes(const string &fileName) {
         docNames.append(",");
     }
     docNames.append(*docName);
+    if (version && !version->empty()) {
+        docNames.append(" @");
+        docNames.append(*version);
+    }
 }
 
 void Cealr::run() {
     if (!server) {
-        if ((*properties)["server"].empty()) {
-            server      = getEnvAsString("CEALR_SERVER");
-            if (!server){
-                server  = new string(DEFAULT_SERVER);
-            }
-        } else {
-            server      = new string((*properties)["server"]);
+        server = properties->get("server", getEnvAsString("CEALR_SERVER"), false);
+        if (!server) {
+            server = new string(DEFAULT_SERVER);
         }
     }
     //in case of option --seal
-    if (registerArgFound || (seal && !apiKey && (*properties)["apiKey"].empty() && (*properties)["email"].empty())) {
+    if (registerArgFound || (seal && !apiKey && !properties->get("apiKey") && !properties->get("email"))) {
         // ask if seal without apiKey
         if (!registerArgFound) {
             registerClient = getSingleCharacterAnswer("Are you already registered with Cryptowerk? [y/N]: ", {'Y', 'N'}, 'N') == 'N';
@@ -322,7 +341,6 @@ void Cealr::run() {
             email = nullptr;
         }
         //in case of registration ask for email, password, first name, last name and optional for org
-        //todo oz: email = new string("olaf.zumpe@gmail.com");
         if (!email) {
             email = getStringMatching("Please enter your email address..................: ", email_pattern);
         }
@@ -330,17 +348,16 @@ void Cealr::run() {
             //in case of registration ask for email, password, first name, last name and optional for org
             string firstName, lastName;
             regex name_pattern = regex("^[[:alpha:] \\-]+$");
-            firstName = /*"Olaf";//todo oz:*/ *getStringMatching("Please enter your first name.....................: ", name_pattern);
-            lastName  = /*"Zumpe"; //todo oz:*/ *getStringMatching("Please enter your last name......................: ", name_pattern);
-            string *organization = /*NULL; //todo oz:*/ getOptString("Please enter your organization (if applicable)...: ");
-            cout  << endl << "Contacting server for user registration\""  << *server << "\"" << endl << endl;
+            firstName = *getStringMatching("Please enter your first name.....................: ", name_pattern);
+            lastName  = *getStringMatching("Please enter your last name......................: ", name_pattern);
+            string *organization = getOptString("Please enter your organization (if applicable)...: ");
+            cout << endl << "Contacting server for user registration\"" << *server << "\"" << endl << endl;
             // register user
             JSON returnJson = registerUser(firstName, lastName, organization);
-//            JSON returnJson = JSON::parse("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
-            properties->erase("apiKey");
+            properties->remove("apiKey");
             // safe data on properties
             // inform about email confirmation
-            cout << "You are now registered with our server \""  << *server << "\"."<< endl
+            cout << "You are now registered with our server \"" << *server << "\"." << endl
                  << "An email has been sent to your account \"" << *email << "\"." << endl
                  << "Please follow the instructions in this email to choose your password and" << endl
                  << "to activate your account." << endl
@@ -348,16 +365,16 @@ void Cealr::run() {
                  << "seal files for proof of existence." << endl
                  << endl;
         }
-        (*properties)["email"]          = *email;
-        if (*server!=DEFAULT_SERVER) {
-            (*properties)["server"]     = *server;
+        properties->put("email", *email);
+        if (*server != DEFAULT_SERVER) {
+            properties->put("server", *server);
         }
-        properties->erase("apiKey");
-        properties->erase("apiCredential");
+        properties->remove("apiKey");
+        properties->remove("apiCredential");
         properties->save();
         // todo No need to exit here, if user just has been created we could wait in cealr (password entry) for activation
         // todo or we exit here and they just need to start cealr again after activation
-        if (registerClient){
+        if (registerClient) {
             exit(1);
         }
     }
@@ -368,13 +385,14 @@ void Cealr::run() {
         initFromPropIfNull(&server, "server");
         if (!apiKey || !apiKey->length() || !apiCredential || !apiCredential->length()) {
             string *password = readPassword();
-            cout  << endl << "Contacting server \""  << *server << "\" to retrieve your account credentials." << endl << endl;
-            JSON returnJson  = creds(*password);
+            cout << endl << "Contacting server \"" << *server << "\" to retrieve your account credentials." << endl
+                 << endl;
+            JSON returnJson = creds(*password);
             cout << returnJson.dump() << endl;
-            string str       = returnJson["apiKey"];
-            apiKey           = new string(str);
-            str              = returnJson["apiCredential"];
-            apiCredential    = new string(str);
+            string str = returnJson["apiKey"];
+            apiKey = new string(str);
+            str = returnJson["apiCredential"];
+            apiCredential = new string(str);
             if (!apiCredential || !apiCredential->length()) {
                 cerr << "The apiCredential has already been revealed for this apiKey." << endl
                      << "For your security we can show an apiCredential exactly one time." << endl
@@ -387,36 +405,45 @@ void Cealr::run() {
                      << "combination which may be used in other systems." << endl;
                 exit(1);
             }
-            (*properties)["apiKey"] = *apiKey;
-            (*properties)["apiCredential"] = *apiCredential;
+            properties->put("apiKey", *apiKey);
+            properties->put("apiCredential", *apiCredential);
             properties->save();
         }
     }
     if (hexHashes.empty()) {
-        throw PrintUsageMessage(cmdName, new string("Missing mode of operation. You might want to try option '--help'."));
+        throw PrintUsageMessage(cmdName,
+                                new string("Missing mode of operation. You might want to try option '--help'."));
     }
     if (seal) {
         if (sign) {
-            OpenPgpSign openPgpSign(GPGME_SIG_MODE_DETACH);
+            OpenPgpSign openPgpSign(GPGME_SIG_MODE_DETACH, properties, email);
             for (const string &fileName:fileNames) {
-                signature = openPgpSign.sign(fileName);
+                openPgpSign.sign(fileName);
                 if (verbose) {
-                    cout << "Signature: " << fileName << endl << signature << endl;
+                    JSON json = openPgpSign.toJson();
+                    cout << "Signature: " << fileName << endl << json.dump() << endl;
                 }
             }
+            cout << endl << "Contacting server \"" << *server << "\" to seal your file \"" << docNames << "\"" << endl
+                 << endl;
+            sealFile(&openPgpSign);
+            cout << "File \"" << docNames << "\" is successfully registered with Cryptowerk." << endl;
+        } else {
+            cout << endl << "Contacting server \"" << *server << "\" to seal your file \"" << docNames << "\"" << endl
+                 << endl;
+            sealFile();
+            cout << "File \"" << docNames << "\" is successfully registered with Cryptowerk." << endl;
         }
-        cout  << endl << "Contacting server \""  << *server << "\" to seal your file \"" << docNames << "\""  << endl << endl;
-        sealFile();
-        cout << "File \"" << docNames << "\" is successfully registered with Cryptowerk." << endl;
     } else {
         const JSON &returnJson = verifySeal();
         auto docs = returnJson["documents"];
-        if (docs!=NULL) {
+        if (docs != nullptr) {
             int foundDocs = docs.size();
             if (foundDocs) {
                 cout << "A file with the same hash as \"" << docNames << " has been registered with Cryptowerk " << foundDocs << " time(s)." << endl;
                 cout << "Details:" << endl;
-                // todo print out details for the document (what blockchain(s) / transaction(s) / time registered)
+                // print out details for the document what blockchain(s), transaction(s), time registered
+                // todo implement Verification as far as reasonable (traverse SmartStamp(s), verify signature, if it is there)!
                 for (auto &doc : docs) {
                     string docName = doc["name"];
                     cout << "Submitted at " << formatTime(doc["submittedAt"], "%H:%M:%ST%Y-%m-%d");
@@ -427,15 +454,41 @@ void Cealr::run() {
                     }
                     cout << endl;
                     auto bcRegs = doc["blockchainRegistrations"];
-                    if (bcRegs!=NULL){
+                    if (bcRegs != NULL) {
                         for (auto bcReg:bcRegs) {
                             auto bcDesc = bcReg["blockChainDesc"];
                             auto bc = bcDesc["generalName"];
                             auto instance = bcDesc["instanceName"];
-                            cout << " put into blockchain: " << bc << ":" << instance << " at " << formatTime(bcReg["insertedIntoBlockchainAt"], "%H:%M:%ST%Y-%m-%d") << ", Transaction ID: " << bcReg["blockChainId"] << endl;
+                            cout << " put into blockchain: " << bc << ":" << instance << " at "
+                                 << formatTime(bcReg["insertedIntoBlockchainAt"], "%H:%M:%ST%Y-%m-%d")
+                                 << ", Transaction ID: " << bcReg["blockChainId"] << endl;
                         }
                     } else {
                         cout << endl << "There was no blockchain registration for this file." << endl;
+                    }
+                    auto sealedMetaData = doc["sealedMetaData"];
+                    if (sealedMetaData != nullptr) {
+                        // todo check MetaData hash and traverse metadata SmartStamp(s)
+                        // todo to root hash print out what root hash needs to be verified in which TX of which blockchain
+                        string sContent = sealedMetaData["content"];
+                        auto content = JSON::parse(sContent); // keep string to build hash
+                        // verification and output of authenticity/signer
+//                        cout << content.dump() << endl;
+                        string keyId = sealedMetaData["keyId"]; // todo could be necessary to download/trust key from key server
+                        string signature = content["signature"];
+                        // todo and check hash of sealedMetaData, output verification info of sealed metadata
+                        OpenPgpSign openPgpSign(GPGME_SIG_MODE_DETACH, properties);
+                        for (const string &fileName:fileNames) {
+                            JSON json = openPgpSign.verify(fileName, &signature);
+                            bool isValid = json["isValid"];
+                            cout << "The signature of \"" << fileName << "\" is " << (isValid ? " matches " : " does not match") << " the stored signature on the server." << endl;
+                            cout << "The file was signed on " << formatTime(json["timestamp"], "%H:%M:%ST%Y-%m-%d") << " with the key with ID " << keyId << endl;
+                            //todo check if keyId matches string fpr = json["fingerprint"];
+                            //todo the key ID of the signature is the same as stated in the documents metadata
+                            //todo or the key ID of the signature is xxx and is not the same as stated in the documents metadata
+
+
+                        }
                     }
                 }
             } else {
@@ -450,45 +503,30 @@ void Cealr::run() {
 string Cealr::formatTime(const time_t timestamp, const string format) {
     struct tm *time;
     char szTime[40];
-    const time_t epoch = timestamp/1000;
+    const time_t epoch = timestamp / 1000;
     time = localtime(&epoch);
     strftime(szTime, sizeof(szTime), format.c_str(), time);
     return string(szTime);
 }
 
-JSON Cealr::sealFile() const {
+JSON Cealr::sealFile(const OpenPgpSign *openPgpSign) const {
     JSON json;
-    json["name"]                = docNames;
-    json["contentType"]         = *new string("application/octet-stream");
-    json["store"]               = true; //
-    json["hashes"]              = hexHashes;
+    json["name"] = docNames;
+    json["contentType"] = *new string("application/octet-stream");
+    json["store"] = true; //
+    json["hashes"] = hexHashes;
     json["publiclyRetrievable"] = true;
-
+    if (openPgpSign) {
+        json["sealedMetaData"] = openPgpSign->toJson().dump();
+    }
     stringstream url;
     url << *server << "/API/v5/register";
-    string sUrl                 = url.str();
+    string sUrl = url.str();
     CurlUtil curlUtil(sUrl, verbose);
     stringstream apiCredStr;
     apiCredStr << "X-ApiKey: " << *apiKey << " " << *apiCredential;
     const string apiCreds = apiCredStr.str();
     curlUtil.addHeader(apiCreds);
-    string *returnData          = curlUtil.post(json);
-//    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
-    auto returnJson             = JSON::parse(*returnData);
-
-    return returnJson;
-}
-
-JSON Cealr::verifySeal() const {
-    JSON json;
-    json["name"]             = docNames;
-    json["contentType"]      = *new string("application/octet-stream");
-    json["retrievalDocHash"] = hexHashes;
-    stringstream url;
-    url << *server << "/API/v5/verify";
-    string sUrl = url.str();
-    CurlUtil curlUtil(sUrl, verbose);
-    curlUtil.addHeader("X-ApiKey: TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=");
     string *returnData = curlUtil.post(json);
 //    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"success\":true,\"minSupportedAPIVersion\":1}");
     auto returnJson = JSON::parse(*returnData);
@@ -496,20 +534,39 @@ JSON Cealr::verifySeal() const {
     return returnJson;
 }
 
+JSON Cealr::verifySeal() const {
+    JSON json;
+    json["name"] = docNames;
+    json["contentType"] = *new string("application/octet-stream");
+    json["retrievalDocHash"] = hexHashes;
+    json["provideRegistrarInfo"] = true;
+    stringstream url;
+    url << *server << "/API/v5/verify";
+    string sUrl = url.str();
+    CurlUtil curlUtil(sUrl, verbose);
+    curlUtil.addHeader(
+            "X-ApiKey: TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=");
+    string *returnData = curlUtil.post(json);
+//    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"documents\":[{\"retrievalId\":\"ri2179949c32bcc46560c9542cf0e48f981d0f26a6633ebbcedc9a96e3482416de1011b09\",\"registrarInfo\":{\"organization\":\"test\"},\"sealedMetaData\":{\"retrievalId\":\"ri2179950c388f94e32bd565762546d33015b9a901efd9c6cade59cda6bee0678d4024123\",\"data\":\"{\\\"keyId\\\":\\\"3965135F3C89FA95\\\",\\\"signature\\\":\\\" iQIyBAEBCAAdFiEEfLYAv3apQznh5CivOWUTXzyJ+pUFAluA4RQACgkQOWUTXzyJ +pXJlA/45RNwTnWCiS/qvyRdsCHn2e1It7PRJOq888PB5nro/7N9s8VYOtwK1067 DzAchwg65dnWfEv3OGgPCHiXJ2p2r5O71qCT7L/XGIeE0vZiex9p8nmCpi+5NkQ7 +MhWTPJpZLvAfmTIHPkFMuxChnZnqW6CBt9/aPO/DMv8/RmNztHwFLRuUUk7aR8M Uih8O1MD16xn4jvU8p0+7c9ZS5Vn/FlZv434sTNZmObXSZWtCmbnmYsxDBkFPezn fsWhp3oV1uPL/mMo2kEwPDYlIUhQAXB5A6rjZf4vDRMshziCzEQc1ZqSpzX7hqdc h5FRnqtgGKt7hVj79rg+BbDR9vyI1iKGSAsrmTpr7eSa5m2RXAk2rpSqW+2c8lU6 wjK1Q0sZI7JgNAFWZb7txj42IPAqaothBiTVnYztgR8jS0WgiGi89Ir4YvbR/o0s /61lvs8cPb0Smcvaa5kMxv6PUrUKNeqXk2hAH5bVyEOngzyIoBAaNRnCP31Y+YxE jB3tA0LUYXY0aw38hpWy9ZxWQQOLt9mc4e2SESfo2tZf8H4oTC+gDV6Nn4EYxgUo 6QFSMYljv9JOgL5ibggJJVnBU5LfizwmXv7vvw8dp851ognTBKyQ6DsH+4kMjdd9 Hw9uNdfezo+952O7dCZUY7AfDLXpozE7iGTKLNIyeKrXsangbA== =o0RX \\\"}\"},\"name\":\"CMakeCache.txt, sealed by olaf.zumpe@gmail.com\",\"submittedAt\":1535172960448,\"contentType\":\"application/octet-stream\",\"hasBeenInsertedIntoAtLeastOneBlockchain\":false,\"blockchainRegistrations\":[],\"hasBeenInsertedIntoAllRequestedBlockchains\":false}],\"minSupportedAPIVersion\":1}");
+    auto returnJson = JSON::parse(*returnData);
+
+    return returnJson;
+}
+
 JSON Cealr::registerUser(const string &firstName, const string &lastName, const string *organization) const {
     JSON json;
-    json["email"]               = *email;
-    json["testAccountName"]     = *email;
-    json["optFirstName"]        = firstName;
-    json["optLastName"]         = lastName;
+    json["email"] = *email;
+    json["testAccountName"] = *email;
+    json["optFirstName"] = firstName;
+    json["optLastName"] = lastName;
     if (organization) {
         json["optOrganization"] = *organization;
     }
     stringstream url;
     url << *server << "/API/v5/registerUser";
-    string sUrl                 = url.str();
+    string sUrl = url.str();
     CurlUtil curlUtil(sUrl, verbose);
-    string *returnData          = curlUtil.post(json);
+    string *returnData = curlUtil.post(json);
     auto returnJson = JSON::parse(*returnData);
 
     return returnJson;
@@ -517,15 +574,15 @@ JSON Cealr::registerUser(const string &firstName, const string &lastName, const 
 
 JSON Cealr::creds(const string &password) const {
     JSON json;
-    json["email"]      = *email;
-    json["password"]   = password;
+    json["email"] = *email;
+    json["password"] = password;
     stringstream url;
     url << *server << "/API/v5/creds";
-    string sUrl        = url.str();
+    string sUrl = url.str();
     CurlUtil curlUtil(sUrl, verbose);
     string *returnData = curlUtil.post(json); // {"maxSupportedAPIVersion":5,"success":true,"minSupportedAPIVersion":1}
     cout << returnData;
-    auto returnJson    = JSON::parse(*returnData);
+    auto returnJson = JSON::parse(*returnData);
 
     return returnJson;
 }
@@ -555,8 +612,8 @@ string *Cealr::getEnvAsString(const string &envKey) const {
 }
 
 void Cealr::initFromPropIfNull(string **pString, const string key) {
-    if (*pString == nullptr && properties->count(key)) {
-        *pString = new string((*properties)[key]);
+    if (*pString == nullptr) {
+        *pString = properties->get(key);
     }
 }
 
@@ -619,11 +676,11 @@ int main(int argc, const char **argv) {
         e.usageMessage(e.getCmd());
         return exitVal;
     }
-    catch (PgpSignException &e){
+    catch (PgpSignException &e) {
         cerr << e.what();
         exit(1);
     }
-    catch (FileException &e){
+    catch (FileException &e) {
         cerr << e.what();
         exit(1);
     }

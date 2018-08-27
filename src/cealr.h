@@ -1,5 +1,5 @@
 /*
- * _____ _____  _____  ____   ______
+ * _____ _____  _____  ___    ______
  *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
  *|  |__|   __|   _   |   |__|
  *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
@@ -25,11 +25,11 @@ static const int MAX_BUFFER_SIZE = 0x4000;
 #include <exception>
 #include <cstdlib>
 #include "Properties.h"
+#include "OpenPgpSign.h"
 #include <nlohmann/json.hpp>
 #include <set>
 #include <regex>
 
-// for convenience
 using JSON = nlohmann::json;
 
 using namespace std;
@@ -40,17 +40,11 @@ private:
     string cmdName;
 public:
     explicit PrintUsageMessage(const string &);
-
     PrintUsageMessage(string, string * );
-
     PrintUsageMessage();
-
     virtual const char *what();
-
     string getCmd();
-
     void usageMessage(string cmdName);
-
 //    ~PrintUsageMessage()/* _NOEXCEPT override*/;
 };
 
@@ -69,7 +63,6 @@ private:
     vector<string> fileNames;
     string hexHashes;
     string docNames;
-    char *signature;
     Properties *properties;
     void initFromPropIfNull(string **, string);
     string *getStringMatching(const string &question, regex regexp);
@@ -79,6 +72,7 @@ private:
     string *readPassword();
     string *hashFile(string sFile);
     string toHex(const unsigned char *hash, int size );
+    void addToHashes(const string &fileName, const string *version);
 
 public:
     Cealr(int, const char**);
@@ -89,11 +83,9 @@ public:
 
     JSON creds(const string &password) const;
 
-    void addToHashes(const string &fileName);
-
     string *getEnvAsString(const string &) const;
 
-    JSON sealFile() const;
+    JSON sealFile(const OpenPgpSign *openPgpSign = nullptr) const;
     JSON verifySeal() const;
 
     string formatTime(time_t timestamp, string format);

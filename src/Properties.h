@@ -1,5 +1,5 @@
 /*
- * _____ _____  _____  ____   ______
+ * _____ _____  _____  ___    ______
  *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
  *|  |__|   __|   _   |   |__|
  *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
@@ -31,13 +31,14 @@ public:
     virtual const char* what();
 };
 
-class Properties: public map<string,string> {
+class Properties: private map<string,string> {
 private:
     string sFile;
     bool saved;
 public:
     explicit Properties(const string&);
     Properties();
+    ~Properties();
 
     static string trim(string str);
 
@@ -50,6 +51,9 @@ public:
     bool operator!=(const Properties &) const;
 
     friend ostream &operator<<(ostream &, const Properties &);
+    string *get(const string &key, string *defaultVal=nullptr, bool copy=true);
+    void put(const string &key, const string &val);
+    void remove(const string &key);
 
     void save();
     bool isSaved();

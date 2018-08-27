@@ -1,5 +1,5 @@
 /*
- * _____ _____  _____  ____   ______
+ * _____ _____  _____  ___    ______
  *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
  *|  |__|   __|   _   |   |__|
  *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
@@ -24,7 +24,13 @@ Properties::Properties(const string &fileName) {
     readFromFile();
 }
 
-Properties::Properties() : Properties(DEFAULT_PROPERTIES){};
+Properties::Properties() : Properties(DEFAULT_PROPERTIES) {};
+
+Properties::~Properties() {
+    if (!saved) {
+        save();
+    }
+};
 
 //class Properties: public map<string,string> {
 void Properties::setFile(const string &fileName) {
@@ -33,10 +39,10 @@ void Properties::setFile(const string &fileName) {
 
 const string Properties::getFullFileName(const string &fileName) {
     string fullName = fileName;
-    if ((unsigned char) fullName[0] == '~'){
+    if ((unsigned char) fullName[0] == '~') {
         char *home = getenv("HOME");
         if (home) {
-            fullName = home+fullName.erase(0, 1);
+            fullName = home + fullName.erase(0, 1);
         }
     }
 
@@ -78,9 +84,9 @@ string Properties::trim(const string str) {
 
 void Properties::save() {
     string *pth = superPath(sFile);
-    if (pth!= nullptr) {
+    if (pth != nullptr) {
         mkdirs(*pth);
-        setFilePermissions(*pth, S_IRUSR|S_IWUSR|S_IXUSR );
+        setFilePermissions(*pth, S_IRUSR | S_IWUSR | S_IXUSR);
         if (fileExists(sFile)) {
             setFilePermissions(sFile, S_IRUSR | S_IWUSR);
         }
@@ -95,8 +101,8 @@ void Properties::save() {
         ofs.close();
         saved = true;
         //protect with read for user (no prev for group and other)
-        setFilePermissions( sFile, S_IRUSR );
-        setFilePermissions(*pth, S_IRUSR|S_IXUSR );
+        setFilePermissions(sFile, S_IRUSR);
+        setFilePermissions(*pth, S_IRUSR | S_IXUSR);
     }
 }
 
@@ -121,7 +127,30 @@ ostream &operator<<(ostream &os, const Properties &properties) {
     return os;
 }
 
+string *Properties::get(const string &key, string *defaultVal, const bool copy) {
+    if (this->count(key)) {
+        return new string((*this)[key]);
+    } else {
+        if (defaultVal && copy) {
+            return new string(*defaultVal);
+        } else {
+            return const_cast<string *>(defaultVal);
+        }
+    }
+}
+
+void Properties::put(const string &key, const string &val) {
+    (*this)[key] = val;
+    saved = false;
+}
+
+void Properties::remove(const string &key) {
+    this->erase(key);
+    saved = false;
+}
+
+// todo override = operators to reset saved flag
+
 bool Properties::isSaved() {
     return saved;
 }
-
