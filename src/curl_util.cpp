@@ -9,7 +9,7 @@
  *
  */
 
-#include "CurlUtil.h"
+#include "curl_util.h"
 #include <utility>
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -18,7 +18,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return bytes;
 }
 
-CurlUtil::CurlUtil(string url, bool bVerbose) {
+curl_util::curl_util(string url, bool bVerbose) {
     setUrl(url);
     setVerbose(bVerbose);
     headers = nullptr;
@@ -34,11 +34,11 @@ CurlUtil::CurlUtil(string url, bool bVerbose) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, returnData);
 }
 
-CurlUtil::CurlUtil(string url): CurlUtil(std::move(url), false) {}
+curl_util::curl_util(string url): curl_util(std::move(url), false) {}
 
-CurlUtil::CurlUtil(): CurlUtil(nullptr, false) {}
+curl_util::curl_util(): curl_util(nullptr, false) {}
 
-CurlUtil::~CurlUtil() {
+curl_util::~curl_util() {
     if (headers) {
         curl_slist_free_all(headers);
     }
@@ -46,24 +46,24 @@ CurlUtil::~CurlUtil() {
     delete returnData;
 }
 
-string *CurlUtil::get() {
+string *curl_util::get() {
     if (!curl) {
     }
     curl_easy_setopt(curl, CURLOPT_URL, sUrl.c_str());
     return _request();
 }
 
-string *CurlUtil::get(string &url) {
+string *curl_util::get(string &url) {
     setUrl(url);
     return get();
 }
 
-string *CurlUtil::post(const string &url, const string &data) {
+string *curl_util::post(const string &url, const string &data) {
     setUrl(url);
     return post(data);
 }
 
-string *CurlUtil::post(const string &data) {
+string *curl_util::post(const string &data) {
     if (verbose) {
         cout << "URL:  " << sUrl << endl
              << "Data: " << data << endl;
@@ -76,23 +76,23 @@ string *CurlUtil::post(const string &data) {
     return _request();
 }
 
-void CurlUtil::addHeader(const string &headerField) {
+void curl_util::addHeader(const string &headerField) {
     headers = curl_slist_append(headers, headerField.c_str());
 }
 
-string *CurlUtil::post(const JSON &json) {
+string *curl_util::post(const json &json) {
     stringstream sJson;
     sJson << json;
     addHeader("Content-Type: application/json");
     return post(sJson.str());
 }
 
-string *CurlUtil::post(const string &url, const JSON &json) {
+string *curl_util::post(const string &url, const json &json) {
     setUrl(url);
     return post(json);
 }
 
-string *CurlUtil::_request() {
+string *curl_util::_request() {
     bool redirecting;
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     do {
@@ -136,10 +136,10 @@ string *CurlUtil::_request() {
     return returnData;
 }
 
-void CurlUtil::setUrl(const string &url) {
+void curl_util::setUrl(const string &url) {
     sUrl = url;
 }
 
-void CurlUtil::setVerbose(const bool bVerbose) {
+void curl_util::setVerbose(const bool bVerbose) {
     verbose = bVerbose;
 }

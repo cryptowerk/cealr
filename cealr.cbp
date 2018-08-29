@@ -86,10 +86,10 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/Users/olaf/CLionProjects/cealr/src/CurlUtil.cpp">
+		<Unit filename="/Users/olaf/CLionProjects/cealr/src/curl_util.cpp">
 			<Option target="cealr"/>
 		</Unit>
-		<Unit filename="/Users/olaf/CLionProjects/cealr/src/CurlUtil.h">
+		<Unit filename="/Users/olaf/CLionProjects/cealr/src/curl_util.h">
 			<Option target="cealr"/>
 		</Unit>
 		<Unit filename="/Users/olaf/CLionProjects/cealr/src/Properties.cpp">

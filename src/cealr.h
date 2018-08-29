@@ -25,70 +25,93 @@ static const int MAX_BUFFER_SIZE = 0x4000;
 #include <exception>
 #include <cstdlib>
 #include "Properties.h"
-#include "OpenPgpSign.h"
+#include "open_pgp.h"
 #include <nlohmann/json.hpp>
 #include <set>
 #include <regex>
 
-using JSON = nlohmann::json;
+using json = nlohmann::json;
 
 using namespace std;
 
-class PrintUsageMessage : public exception {
+class print_usage_msg : public exception
+{
 private:
-    runtime_error errMsg;
-    string cmdName;
+  runtime_error err_msg;
+  string cmd_name;
 public:
-    explicit PrintUsageMessage(const string &);
-    PrintUsageMessage(string, string * );
-    PrintUsageMessage();
-    virtual const char *what();
-    string getCmd();
-    void usageMessage(string cmdName);
-//    ~PrintUsageMessage()/* _NOEXCEPT override*/;
+  explicit print_usage_msg(const string &);
+
+  print_usage_msg(string, string *);
+
+  print_usage_msg();
+
+  virtual const char *what();
+
+  string getCmd();
+
+  void usage_message(string cmd_name);
+//    ~print_usage_msg()/* _NOEXCEPT override*/;
 };
 
-class Cealr {
+class cealr
+{
 private:
-    string cmdName;
-    string *server;
-    string *apiKey;
-    string *apiCredential;
-    string *email;
-    bool verbose;
-    bool registerArgFound;
-    bool registerClient;
-    bool seal;
-    bool sign;
-    vector<string> fileNames;
-    string hexHashes;
-    string docNames;
-    Properties *properties;
-    void initFromPropIfNull(string **, string);
-    string *getStringMatching(const string &question, regex regexp);
-    string *getOptString(const string &question);
-    char getSingleCharacterAnswer(const string &question, set<char> validAnswers, char defaultAnswer);
-    string *getPassword(const string &question, int minLength, int minDigits, int minSmall, int minCaps);
-    string *readPassword();
-    string *hashFile(string sFile);
-    string toHex(const unsigned char *hash, int size );
-    void addToHashes(const string &fileName, const string *version);
+  string cmd_name;
+  string *server;
+  string *api_key;
+  string *api_credential;
+  string *email;
+  bool verbose;
+  bool register_arg_found;
+  bool register_client;
+  bool seal;
+  bool sign;
+  vector<string> file_names;
+  string hex_hashes;
+  string doc_names;
+  Properties *properties;
+
+  void init_from_prop_if_null(string **p_string, string key);
+
+  string *get_string_matching(const string &question, regex regexp);
+
+  string *get_opt_str(const string &question);
+
+  char get_single_character_answer(const string &question, set<char> valid_answers, char default_answer);
+
+  string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps);
+
+  string *read_password();
+
+  string *hash_file(string file);
+
+  string to_hex(const unsigned char *hash, int size);
+
+  void add2hashes(const string &file_name, const string *version);
 
 public:
-    Cealr(int, const char**);
-    virtual ~Cealr();
-    void run();
+  cealr(int, const char **);
 
-    JSON registerUser(const string &firstName, const string &lastName, const string *organization) const;
+  virtual ~cealr();
 
-    JSON creds(const string &password) const;
+  void run();
 
-    string *getEnvAsString(const string &) const;
+  json register_user(const string &firstName, const string &lastName, const string *organization) const;
 
-    JSON sealFile(const OpenPgpSign *openPgpSign = nullptr) const;
-    JSON verifySeal() const;
+  json creds(const string &password) const;
 
-    string formatTime(time_t timestamp, string format);
+  string *get_env_str(const string &) const;
+
+  json seal_file(const open_pgp *openPgpSign = nullptr) const;
+
+  json verify_seal() const;
+
+  string format_time(time_t timestamp, string format);
+
+  void verify();
+
+  void verify_metadata(json doc);
 };
 
 #endif //CEALR_H

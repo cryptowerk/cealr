@@ -22,45 +22,53 @@ static const char *const DEFAULT_PROPERTIES = "~/.cealr/config.properties";
 
 using namespace std;
 
-class FileException: public exception {
+class file_exception : public exception
+{
 private:
-    runtime_error errMsg;
+  runtime_error err_msg;
 public:
-    explicit FileException(const string &file);
+  explicit file_exception(const string &file);
 
-    virtual const char* what();
+  virtual const char *what();
 };
 
-class Properties: private map<string,string> {
+class Properties : private map<string, string>
+{
 private:
-    string sFile;
-    bool saved;
+  string file;
+  bool saved;
 public:
-    explicit Properties(const string&);
-    Properties();
-    ~Properties();
+  explicit Properties(const string &);
 
-    static string trim(string str);
+  Properties();
 
-    void readFromFile();
+  ~Properties();
 
-    const string &getFile() const;
+  static string trim(string str);
 
-    bool operator==(const Properties &) const;
+  void read_from_file();
 
-    bool operator!=(const Properties &) const;
+  const string &getFile() const;
 
-    friend ostream &operator<<(ostream &, const Properties &);
-    string *get(const string &key, string *defaultVal=nullptr, bool copy=true);
-    void put(const string &key, const string &val);
-    void remove(const string &key);
+  bool operator==(const Properties &) const;
 
-    void save();
-    bool isSaved();
+  bool operator!=(const Properties &) const;
 
-    void setFile(const string &fileName);
+  friend ostream &operator<<(ostream &, const Properties &);
 
-    static const string getFullFileName(const string &basic_string);
+  string *get(const string &key, string *default_val = nullptr, bool copy = true);
+
+  void put(const string &key, const string &val);
+
+  void remove(const string &key);
+
+  void save();
+
+  bool isSaved();
+
+  void set_file(const string &fileName);
+
+  static const string get_full_file_name(const string &file_name);
 };
 
 #endif //SEALER_PROPERTIES_H

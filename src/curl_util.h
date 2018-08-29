@@ -15,15 +15,15 @@
 #include <iostream>
 #include <string>
 #include <curl/curl.h>
-//#include "JSON.h"
+//#include "json.h"
 #include <nlohmann/json.hpp>
 
 // for convenience
-using JSON = nlohmann::json;
+using json = nlohmann::json;
 
 using namespace std;
 
-class CurlUtil {
+class curl_util {
 private:
     CURL *curl;
     bool verbose;
@@ -35,13 +35,13 @@ private:
     string *_request();
 
 public:
-    CurlUtil();
+    curl_util();
 
-    CurlUtil(string url);
+    curl_util(string url);
 
-    CurlUtil(string, bool);
+    curl_util(string, bool);
 
-    ~CurlUtil();
+    ~curl_util();
 
     void setUrl(const string &url);
 
@@ -55,9 +55,9 @@ public:
 
     string *post(const string &url, const string &data);
 
-    string *post(const string &url, const JSON &json);
+    string *post(const string &url, const json &json);
 
-    string *post(const JSON &json);
+    string *post(const json &json);
 
     string *get(string &url);
 };

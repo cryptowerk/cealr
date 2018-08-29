@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef CEALR_FILEUTIL_H
-#define CEALR_FILEUTIL_H
+#ifndef CEALR_FILE_UTIL_H
+#define CEALR_FILE_UTIL_H
 
 #ifdef WIN32
 // Definiitions to exclude selected header files.
@@ -114,14 +114,18 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 
 using namespace std;
 
-bool dirExists(const string& path);
-bool fileExists(const string& path);
-string *superPath(string path);
-string *fileNameWithoutPath(string path);
+bool dir_exists(const string &path);
 
-bool mkdirs(const string& path);
+bool fileExists(const string &path);
 
-mode_t getFilePermissions(string path);
-mode_t setFilePermissions(string path, mode_t attrs);
+string *super_path(string path);
 
-#endif //CEALR_FILEUTIL_H
+string *file_name_without_path(string path);
+
+bool mkdirs(const string &path);
+
+mode_t get_file_permissions(string path);
+
+mode_t set_file_permissions(string path, mode_t attrs);
+
+#endif //CEALR_FILE_UTIL_H
