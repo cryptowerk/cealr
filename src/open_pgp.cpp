@@ -15,11 +15,16 @@
 
 open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const string *email_addr)
 {
-  sig_mode = _sig_mode;
-  email = email_addr;
-  properties = _properties;
-  key = nullptr;
-  signature = nullptr;
+  sig_mode    = _sig_mode;
+  email       = email_addr;
+  properties  = _properties;
+  key         = nullptr;
+  signature   = nullptr;
+  in          = nullptr;
+  out         = nullptr;
+  key_id      = nullptr;
+  key_name    = nullptr;
+  key_email   = nullptr;
   gpgme_check_version (nullptr);
   setlocale(LC_ALL, "");
   gpgme_set_locale(nullptr, LC_CTYPE, setlocale(LC_CTYPE, nullptr));
@@ -36,7 +41,7 @@ open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const st
   {
     throw pgp_exception(__FILE__, __LINE__, err);
   }
-  gpgme_engine_info_t x = gpgme_ctx_get_engine_info(ctx);
+//  gpgme_engine_info_t x = gpgme_ctx_get_engine_info(ctx);
 
   // Set the context to textmode
   gpgme_set_textmode(ctx, 1);

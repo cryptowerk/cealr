@@ -595,7 +595,7 @@ void cealr::verify()
 
 void cealr::verify_metadata(json doc)
 {
-  auto sealed_meta_data = doc["sealed_Meta_Data"];
+  auto sealed_meta_data = doc["sealedMetaData"];
   if (sealed_meta_data != nullptr)
   {
     // todo check MetaData hash and traverse metadata SmartStamp(s)
@@ -614,7 +614,7 @@ void cealr::verify_metadata(json doc)
     else
     {
       // verification and output of authenticity/signer
-      string key_id = content["key_id"];
+      string key_id = content["keyId"];
       string signature = content["signature"];
       open_pgp open_pgp(GPGME_SIG_MODE_DETACH, properties);
       for (const string &file_name:this->file_names)
@@ -639,8 +639,7 @@ void cealr::verify_metadata(json doc)
         auto submitter_email = content["verifiedSubmitterEmail"];
         if (submitter_email != nullptr && (submitter_email == signature_email))
         {
-          cout
-              << " and matches the verified email address of the CryptoWerk customer who submitted this file for sealing.";
+          cout << " and matches the verified email address of the CryptoWerk customer who submitted this file for sealing.";
         }
         else
         {
