@@ -109,6 +109,8 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <regex>
+#include <set>
 
 #endif
 
@@ -127,5 +129,17 @@ bool mkdirs(const string &path);
 mode_t get_file_permissions(string path);
 
 mode_t set_file_permissions(string path, mode_t attrs);
+
+string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps, string nttyError);
+
+string to_hex(const unsigned char *hash, int size);
+
+string *get_string_matching(const string &question, regex regexp);
+
+string *get_opt_str(const string &question);
+
+char get_single_character_answer(const string &question, set<char> valid_answers, char default_answer);
+
+string format_time(time_t timestamp, string format);
 
 #endif //CEALR_FILE_UTIL_H

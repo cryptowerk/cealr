@@ -19,6 +19,7 @@
 #include <list>
 #include <map>
 #include "Properties.h"
+#include "file_util.h"
 
 #include <gpgme.h>
 #include <nlohmann/json.hpp>
@@ -27,7 +28,6 @@ using json = nlohmann::json;
 
 using namespace std;
 
-#define BUF_SIZE 512
 #define BEGIN_PGP_SIGNATURE "-----BEGIN PGP SIGNATURE-----\n"
 #define END_PGP_SIGNATURE   "-----END PGP SIGNATURE-----\n"
 
@@ -68,7 +68,11 @@ private:
   gpgme_sig_mode_t sig_mode;
   gpgme_key_t key;
 
+  gpgme_verify_result_t verify_file_signature(const string &file_to_be_verified, string *_signature);
+
   list<map<string, string>> list_keys(const string *opt_pattern, int is_private);
+
+//  gpgme_key_t *list_keys_for_import(const string &fpr, int is_private);
 
 public:
   open_pgp(gpgme_sig_mode_t _sig_mode, class Properties *_properties);
@@ -79,7 +83,7 @@ public:
 
   string sign(string file_to_be_signed);
 
-  json verify(string file_to_be_verified, string *_signature = nullptr);
+  json verify(const string &file_to_be_verified, string *_signature = nullptr);
 
   list<map<string, string>> list_public_keys(const string *opt_pattern);
 
@@ -87,13 +91,21 @@ public:
 
   void select_best_signing_key();
 
-  bool canSign(gpgme_key_t pKey);
+  bool can_sign(gpgme_key_t pKey);
 
   unsigned int count_signatures(_gpgme_key *const _key) const;
 
   json toJson() const;
 
   void expand_sig_if_neccesary(string *sig) const;
+
+  bool find_and_import_key(const string &fpr);
+
+  string get_trust_level(const gpgme_validity_t &trust) const;
+
+  bool check_trust(gpgme_key_t &_key);
+
+  gpgme_key_t find_key(const string &fpr, gpgme_keylist_mode_t mode = GPGME_KEYLIST_MODE_LOCAL);
 };
 
 #endif //CEALR_OPENPGPSIGN_H

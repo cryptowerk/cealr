@@ -155,7 +155,7 @@ ostream &operator<<(ostream &os, const Properties &properties)
 
 string *Properties::get(const string &key, string *default_val, const bool copy)
 {
-  if (this->count(key))
+  if (count(key))
   {
     return new string((*this)[key]);
   }
@@ -180,7 +180,7 @@ void Properties::put(const string &key, const string &val)
 
 void Properties::remove(const string &key)
 {
-  this->erase(key);
+  erase(key);
   saved = false;
 }
 

@@ -74,19 +74,9 @@ private:
 
   void init_from_prop_if_null(string **p_string, string key);
 
-  string *get_string_matching(const string &question, regex regexp);
-
-  string *get_opt_str(const string &question);
-
-  char get_single_character_answer(const string &question, set<char> valid_answers, char default_answer);
-
-  string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps);
-
   string *read_password();
 
   string *hash_file(string file);
-
-  string to_hex(const unsigned char *hash, int size);
 
   void add2hashes(const string &file_name, const string *version);
 
@@ -106,8 +96,6 @@ public:
   json seal_file(const open_pgp *openPgpSign = nullptr) const;
 
   json verify_seal() const;
-
-  string format_time(time_t timestamp, string format);
 
   void verify();
 
