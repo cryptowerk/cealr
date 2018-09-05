@@ -12,10 +12,9 @@
 #ifndef CEALR_OPENPGPSIGN_H
 #define CEALR_OPENPGPSIGN_H
 
-#include <cstdlib>
-#include <cerrno>
-#include <clocale>
-#include <iostream>
+//#include <cstdlib>
+//#include <cerrno>
+//#include <clocale>
 #include <list>
 #include <map>
 #include "Properties.h"
@@ -30,6 +29,8 @@ using namespace std;
 
 #define BEGIN_PGP_SIGNATURE "-----BEGIN PGP SIGNATURE-----\n"
 #define END_PGP_SIGNATURE   "-----END PGP SIGNATURE-----\n"
+
+static const char *const OPENPGP_DEFAULT_KEYSERVER = "hkp://pgp.mit.edu";
 
 class pgp_exception : public exception
 {
@@ -91,13 +92,13 @@ public:
 
   void select_best_signing_key();
 
-  bool can_sign(gpgme_key_t pKey);
+  bool can_sign(gpgme_key_t _key);
 
-  unsigned int count_signatures(_gpgme_key *const _key) const;
+  unsigned int count_signatures(gpgme_key_t _key) const;
 
   json toJson() const;
 
-  void expand_sig_if_neccesary(string *sig) const;
+  void expand_sig_if_necessary(string *sig) const;
 
   bool find_and_import_key(const string &fpr);
 
@@ -106,6 +107,10 @@ public:
   bool check_trust(gpgme_key_t &_key);
 
   gpgme_key_t find_key(const string &fpr, gpgme_keylist_mode_t mode = GPGME_KEYLIST_MODE_LOCAL);
+
+  bool export_key(const string &fpr);
+
+  bool is_key_exported(const string &fpr);
 };
 
 #endif //CEALR_OPENPGPSIGN_H

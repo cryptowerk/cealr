@@ -102,13 +102,16 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 #define PATH_SEPARATOR '\\'
 #else
 #define PATH_SEPARATOR '/'
-//#include <string>
-#include <cstring>
-#include <cstdlib>
-#include <iostream>
+#include <string>
+//#include <cstdlib>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/errno.h>
+//#include <sys/types.h>
+//#include <sys/errno.h>
+#include <zconf.h>
+#include <sys/termios.h>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 #include <regex>
 #include <set>
 
@@ -141,5 +144,7 @@ string *get_opt_str(const string &question);
 char get_single_character_answer(const string &question, set<char> valid_answers, char default_answer);
 
 string format_time(time_t timestamp, string format);
+
+string trim(string str);
 
 #endif //CEALR_FILE_UTIL_H

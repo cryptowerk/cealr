@@ -83,21 +83,6 @@ void Properties::read_from_file()
   }
 }
 
-string Properties::trim(const string str)
-{
-  string s = str;
-  unsigned long p;
-  while ((p = s.length()) > 0 && (unsigned char) s[p - 1] <= ' ')
-  {
-    s.resize(p - 1);
-  }
-  while (s.length() > 0 && (unsigned char) s[0] <= ' ')
-  {
-    s.erase(0, 1);
-  }
-  return s;
-}
-
 void Properties::save()
 {
   string *pth = super_path(file);
@@ -153,7 +138,7 @@ ostream &operator<<(ostream &os, const Properties &properties)
   return os;
 }
 
-string *Properties::get(const string &key, string *default_val, const bool copy)
+string *Properties::get(const string &key, string *default_val, const bool cloneValue)
 {
   if (count(key))
   {
@@ -161,13 +146,13 @@ string *Properties::get(const string &key, string *default_val, const bool copy)
   }
   else
   {
-    if (default_val && copy)
+    if (default_val && cloneValue)
     {
       return new string(*default_val);
     }
     else
     {
-      return const_cast<string*>(default_val);
+      return default_val;
     }
   }
 }

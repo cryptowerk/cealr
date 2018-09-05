@@ -9,14 +9,7 @@
  *
  */
 
-#include "cealr.h"
 #include "file_util.h"
-
-#include <zconf.h>
-#include <sys/termios.h>
-#include <string>
-#include <exception>
-#include <cstdlib>
 
 bool dir_exists(const string &path)
 {
@@ -172,7 +165,7 @@ string *get_string_matching(const string &question, regex regexp)
     cout << question;
     cin.clear();
     getline(cin, input);
-    input = Properties::trim(input);
+    input = trim(input);
     smatch m;
     ok = regex_match(input, m, regexp);
     if (!ok)
@@ -251,7 +244,7 @@ string *get_opt_str(const string &question)
   cout << question;
   cin.clear();
   getline(cin, input);
-  input = Properties::trim(input);
+  input = trim(input);
   return (input[0]) == 0 ? nullptr : new string(input);
 }
 
@@ -263,4 +256,20 @@ string format_time(time_t timestamp, string format)
   time = localtime(&epoch);
   strftime(time_str, sizeof(time_str), format.c_str(), time);
   return string(time_str);
+}
+
+
+string trim(const string str)
+{
+  string s = str;
+  unsigned long p;
+  while ((p = s.length()) > 0 && (unsigned char) s[p - 1] <= ' ')
+  {
+    s.resize(p - 1);
+  }
+  while (s.length() > 0 && (unsigned char) s[0] <= ' ')
+  {
+    s.erase(0, 1);
+  }
+  return s;
 }

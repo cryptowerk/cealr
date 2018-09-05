@@ -9,8 +9,8 @@
  *
  */
 
-#include <vector>
-#include <sstream>
+//#include <vector>
+//#include <sstream>
 #include "open_pgp.h"
 
 open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const string *email_addr)
@@ -41,14 +41,21 @@ open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const st
   {
     throw pgp_exception(__FILE__, __LINE__, err);
   }
-//  gpgme_engine_info_t x = gpgme_ctx_get_engine_info(ctx);
+  gpgme_set_protocol(ctx, GPGME_PROTOCOL_OpenPGP);
+//  gpgme_engine_info_t info = gpgme_ctx_get_engine_info(ctx);
 
   // Set the context to textmode
   gpgme_set_textmode(ctx, 1);
   // Enable ASCII armor on the context
   gpgme_set_armor(ctx, 1);
 
-  key_server = properties->get("keyServer", new string("pgp.mit.edu"), false);
+  key_server = properties->get("keyServer", new string(OPENPGP_DEFAULT_KEYSERVER), false);
+  if (key_server->find("://") == string::npos)
+  {
+    string *old = key_server;
+    *key_server = "hkp://" + *key_server;
+    delete old;
+  }
 }
 
 open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *properties) : open_pgp(_sig_mode, properties, nullptr) {}
@@ -78,6 +85,7 @@ open_pgp::~open_pgp()
   delete key_name;
   delete key_email;
   delete signature;
+  delete key_server;
 }
 
 string open_pgp::sign(const string file_to_be_signed)
@@ -94,6 +102,13 @@ string open_pgp::sign(const string file_to_be_signed)
     throw pgp_exception(__FILE__, __LINE__, err);
   }
   select_best_signing_key();
+  if (!key){
+    cerr << "There is no private key to sign with installed with your GPG right now." << endl
+         << "Please use gpg to import or generate a private key for you. " << endl
+         << "Ideally it should have the same email address as your CryptoWerk account" << endl
+         << "and it should have as many key signers as possible in order to establish" << endl
+         << "trust among the people who want to verify your signatures." << endl;
+  }
 
   // Sign the contents of "in" using the defined mode and place it into "out"
   if ((err = gpgme_op_sign(ctx, in, out, sig_mode)))
@@ -125,10 +140,9 @@ string open_pgp::sign(const string file_to_be_signed)
   delete[] sig;
   delete[] arr;
 
-//  todo check if this->key is uploaded on the default key server and upload it, if not (maybe store the key ID as uploaded in the properties?).
-//    if (*keyId!=*properties->get("keyId")) {
-//        properties->put("keyId", *keyId);
-//    }
+  // check if this->key is uploaded on the default key server and upload it, if not (maybe store the key ID as uploaded in the properties?).
+  export_key(key->fpr);
+
   return *signature;
 }
 
@@ -244,11 +258,11 @@ void open_pgp::select_best_signing_key()
   else
   {
     // todo generate key pair and upload public key
-    throw pgp_exception(__FILE__, __LINE__, "GnuPG has no signing key installed.");
+    list_private_keys(nullptr);
   }
 }
 
-unsigned int open_pgp::count_signatures(_gpgme_key *const _key) const
+unsigned int open_pgp::count_signatures(gpgme_key_t _key) const
 {
   unsigned int count_key_sigs = 0;
   gpgme_user_id_t uid = _key->uids;
@@ -275,31 +289,31 @@ list<map<string, string>> open_pgp::list_keys(const string *opt_pattern, int is_
   err = gpgme_op_keylist_start(ctx, opt_pattern ? opt_pattern->c_str() : nullptr, is_private);
   while (!err)
   {
-    gpgme_key_t key;
-    err = gpgme_op_keylist_next(ctx, &key);
+    gpgme_key_t _key;
+    err = gpgme_op_keylist_next(ctx, &_key);
     if (!err)
     {
-      if (!key->invalid && key->subkeys->can_sign)
+      if (!_key->invalid /*&& _key->subkeys->can_sign*/)
       {
         auto k = new map<string, string>;
-        (*k)["keyId"] = key->subkeys->keyid;
-        if (key->uids && key->uids->name)
+        (*k)["keyId"] = _key->subkeys->keyid;
+        if (_key->uids && _key->uids->name)
         {
-          (*k)["name"] = key->uids->name;
+          (*k)["name"] = _key->uids->name;
         }
-        if (key->uids && key->uids->email)
+        if (_key->uids && _key->uids->email)
         {
-          (*k)["email"] = key->uids->email;
+          (*k)["email"] = _key->uids->email;
         }
-        (*k)["keyTrustLevel"] = get_trust_level(key->owner_trust);
+        (*k)["keyTrustLevel"] = get_trust_level(_key->owner_trust);
         result->push_back(*k);
       }
-      gpgme_key_release(key);
+      gpgme_key_release(_key);
     }
   }
   if (gpg_err_code(err) != GPG_ERR_EOF)
   {
-    throw pgp_exception(__FILE__, __LINE__, err);
+    throw pgp_exception(__FILE__, __LINE__, gpgme_strerror(err));
   }
   return *result;
 }
@@ -344,11 +358,11 @@ list<map<string, string>> open_pgp::list_private_keys(const string *opt_pattern)
   return list_keys(opt_pattern, 1);
 }
 
-bool open_pgp::can_sign(gpgme_key_t key)
+bool open_pgp::can_sign(gpgme_key_t _key)
 {
   // bad practice to use main key for signing
-  bool canSign = static_cast<bool>(key->can_sign);
-  gpgme_subkey_t subKey = key->subkeys;
+  bool canSign = static_cast<bool>(_key->can_sign);
+  gpgme_subkey_t subKey = _key->subkeys;
   while (!canSign && subKey)
   {
     canSign = static_cast<bool>(subKey->can_sign);
@@ -380,19 +394,19 @@ json open_pgp::toJson() const
   return json;
 }
 
-//todo implement searching, downloading, verifying, installing, trusting public key by key ID
+//todo implement verifying/trusting public key by key ID
 
 
-//todo implement generating key pair and uploading public key
+//todo implement importing/generating key pair
 
 // verify signature
 json open_pgp::verify(const string &file_to_be_verified, string *_signature)
 {
   gpgme_verify_result_t verResult = verify_file_signature(file_to_be_verified, _signature);
-  gpgme_sigsum_t sigsum = verResult->signatures->summary;
+  gpgme_sigsum_t sig_sum = verResult->signatures->summary;
   string fpr = verResult->signatures->fpr;
-  bool isKeyMissing = (sigsum & GPGME_SIGSUM_KEY_MISSING) != 0;
-  bool isValid = (sigsum & GPGME_SIGSUM_VALID) != 0;
+  bool isKeyMissing = (sig_sum & GPGME_SIGSUM_KEY_MISSING) != 0;
+  bool isValid = (sig_sum & GPGME_SIGSUM_VALID) != 0;
   bool retry = false;
   if (!isValid)
   {
@@ -408,7 +422,7 @@ json open_pgp::verify(const string &file_to_be_verified, string *_signature)
         // check if key validity is not known
         retry = check_trust(_key);
         if (retry){
-          // trust key
+          // trust key: sign it; GPGME seems to have no way to manipulate the trust level of a key
 //          gpgme_key_release(_key);
 //          _key = find_key(fpr, GPGME_KEYLIST_MODE_VALIDATE);
           if ((err = gpgme_op_keysign(ctx, _key, nullptr, 0, GPGME_KEYSIGN_LOCAL)))
@@ -423,23 +437,23 @@ json open_pgp::verify(const string &file_to_be_verified, string *_signature)
   if (retry)
   {
     verResult = verify_file_signature(file_to_be_verified, _signature);
-    sigsum = verResult->signatures->summary;
-    isKeyMissing = (sigsum & GPGME_SIGSUM_KEY_MISSING);
-    isValid = (sigsum & GPGME_SIGSUM_VALID) != 0;
+    sig_sum = verResult->signatures->summary;
+    isKeyMissing = (sig_sum & GPGME_SIGSUM_KEY_MISSING);
+    isValid = (sig_sum & GPGME_SIGSUM_VALID) != 0;
   }
   json json;
   json["isValid"]         = isValid;
-  json["isSigGood"]       = (sigsum & GPGME_SIGSUM_GREEN)         != 0; // The signature is good.
-  json["isSigBad"]        = (sigsum & GPGME_SIGSUM_RED)           != 0; // The signature is bad.
-  json["isKeyRevoked"]    = (sigsum & GPGME_SIGSUM_KEY_REVOKED)   != 0; // One key has been revoked.
-  json["isKeyExpired"]    = (sigsum & GPGME_SIGSUM_KEY_EXPIRED)   != 0; // One key has expired.
-  json["isSigExpired"]    = (sigsum & GPGME_SIGSUM_SIG_EXPIRED)   != 0; // The signature has expired.
+  json["isSigGood"]       = (sig_sum & GPGME_SIGSUM_GREEN)         != 0; // The signature is good.
+  json["isSigBad"]        = (sig_sum & GPGME_SIGSUM_RED)           != 0; // The signature is bad.
+  json["isKeyRevoked"]    = (sig_sum & GPGME_SIGSUM_KEY_REVOKED)   != 0; // One key has been revoked.
+  json["isKeyExpired"]    = (sig_sum & GPGME_SIGSUM_KEY_EXPIRED)   != 0; // One key has expired.
+  json["isSigExpired"]    = (sig_sum & GPGME_SIGSUM_SIG_EXPIRED)   != 0; // The signature has expired.
   json["isKeyNotFound"]   = isKeyMissing;                               // Can't verify: key missing.
-  json["isCrlMissing"]    = (sigsum & GPGME_SIGSUM_CRL_MISSING)   != 0; // CRL not available.
-  json["isCrlTooOld"]     = (sigsum & GPGME_SIGSUM_CRL_TOO_OLD)   != 0; // Available CRL is too old.
-  json["isBadPolicy"]     = (sigsum & GPGME_SIGSUM_BAD_POLICY)    != 0; // A policy was not met.
-  json["isSysError"]      = (sigsum & GPGME_SIGSUM_SYS_ERROR)     != 0; // A system error occurred.
-  json["isTofuConflict"]  = (sigsum & GPGME_SIGSUM_TOFU_CONFLICT) != 0; // Tofu conflict detected.
+  json["isCrlMissing"]    = (sig_sum & GPGME_SIGSUM_CRL_MISSING)   != 0; // CRL not available.
+  json["isCrlTooOld"]     = (sig_sum & GPGME_SIGSUM_CRL_TOO_OLD)   != 0; // Available CRL is too old.
+  json["isBadPolicy"]     = (sig_sum & GPGME_SIGSUM_BAD_POLICY)    != 0; // A policy was not met.
+  json["isSysError"]      = (sig_sum & GPGME_SIGSUM_SYS_ERROR)     != 0; // A system error occurred.
+  json["isTofuConflict"]  = (sig_sum & GPGME_SIGSUM_TOFU_CONFLICT) != 0; // Tofu conflict detected.
   json["isDeVS"]          = verResult->signatures->is_de_vs       != 0;
   json["fingerprint"]     = fpr;
   json["timestamp"]       = verResult->signatures->timestamp;
@@ -469,7 +483,7 @@ gpgme_verify_result_t open_pgp::verify_file_signature(const string &file_to_be_v
   {
     throw pgp_exception(__FILE__, __LINE__, err);
   }
-  expand_sig_if_neccesary(sig);
+  expand_sig_if_necessary(sig);
   gpgme_data_t s;
   if ((err = gpgme_data_new_from_mem(&s, sig->c_str(), sig->size(), 0)))
   {
@@ -487,7 +501,7 @@ gpgme_verify_result_t open_pgp::verify_file_signature(const string &file_to_be_v
   return gpgme_op_verify_result(ctx);
 }
 
-void open_pgp::expand_sig_if_neccesary(string *sig) const
+void open_pgp::expand_sig_if_necessary(string *sig) const
 {
   if (sig->find(BEGIN_PGP_SIGNATURE) == string::npos)
   {
@@ -499,14 +513,13 @@ void open_pgp::expand_sig_if_neccesary(string *sig) const
 
 bool open_pgp::find_and_import_key(const string &fpr)
 {
-//  gpgme_set_keylist_mode(ctx, GPGME_KEYLIST_MODE_EXTERN);
-  gpgme_set_global_flag("auto-key-locate", "hkp://pgp.mit.edu");
+  gpgme_set_global_flag("auto-key-locate", key_server->c_str());
 
   gpgme_key_t _keys[2];
   _keys[0] = find_key(fpr, GPGME_KEYLIST_MODE_EXTERN);
   if (_keys[0] == nullptr)
   {
-    throw pgp_exception(__FILE__, __LINE__, err);
+    throw pgp_exception(__FILE__, __LINE__, "The key with fingerprint "+fpr+" has not been found");
   }
   bool success;
   if ((success = check_trust(_keys[0])))
@@ -521,7 +534,7 @@ bool open_pgp::find_and_import_key(const string &fpr)
       gpgme_import_result_t result = gpgme_op_import_result(ctx);
       success = result->imported != 0;
     }
-    // trust key: sign it
+    // trust key: sign it; GPGME seems to have no way to manipulate the trust level of a key
     if ((err = gpgme_op_keysign(ctx, _keys[0], nullptr, 0, GPGME_KEYSIGN_LOCAL)))
     {
       throw pgp_exception(__FILE__, __LINE__, err);
@@ -586,4 +599,46 @@ gpgme_key_t open_pgp::find_key(const string &fpr, gpgme_keylist_mode_t mode)
     throw pgp_exception(__FILE__, __LINE__, err);
   }
   return _k;
+}
+
+bool open_pgp::export_key(const string &fpr)
+{
+  bool success = is_key_exported(fpr);
+  if (!success)
+  {
+    gpgme_key_t _keys[2];
+    if ((success = ((_keys[0] = find_key(fpr)) != nullptr)))
+    {
+      gpgme_set_global_flag("auto-key-locate", key_server->c_str());
+
+      if ((err = gpgme_op_export_keys(ctx, _keys, GPGME_KEYLIST_MODE_EXTERN, nullptr)))
+      {
+        throw pgp_exception(__FILE__, __LINE__, err);
+      }
+      fflush(nullptr);
+
+      gpgme_key_release(_keys[0]);
+      success = is_key_exported(fpr);
+    }
+  }
+  return success;
+}
+
+bool open_pgp::is_key_exported(const string &fpr)
+{
+  string *exported_key_ids = properties->get("exportedKeyIds");
+  bool exported = true;
+  if ((exported_key_ids == nullptr) ||
+      (exported_key_ids->find(fpr) == string::npos))
+  {
+    gpgme_key_t _key = find_key(fpr, GPGME_KEYLIST_MODE_EXTERN);
+    if ((exported = (_key != nullptr)))
+    {
+      gpgme_key_release(_key);
+      properties->put("exportedKeyIds", *(exported_key_ids ? &exported_key_ids->append("," + fpr) : new string(fpr)));
+    }
+  }
+  delete exported_key_ids;
+
+  return exported;
 }

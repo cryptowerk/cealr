@@ -44,8 +44,6 @@ public:
 
   ~Properties();
 
-  static string trim(string str);
-
   void read_from_file();
 
   const string &getFile() const;
@@ -56,7 +54,7 @@ public:
 
   friend ostream &operator<<(ostream &, const Properties &);
 
-  string *get(const string &key, string *default_val = nullptr, bool copy = true);
+  string *get(const string &key, string *default_val = nullptr, bool cloneValue = true);
 
   void put(const string &key, const string &val);
 
