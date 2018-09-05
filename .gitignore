@@ -31,6 +31,9 @@
 *.out
 *.app
 
+# logging
+*.log
+
 # project and meta data IDE/OS
 .DS_Store
 /.idea/

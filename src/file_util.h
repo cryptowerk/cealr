@@ -133,7 +133,7 @@ mode_t get_file_permissions(string path);
 
 mode_t set_file_permissions(string path, mode_t attrs);
 
-string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps, string nttyError);
+string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps, string noTtyError);
 
 string to_hex(const unsigned char *hash, int size);
 

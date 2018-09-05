@@ -403,11 +403,11 @@ json open_pgp::toJson() const
 json open_pgp::verify(const string &file_to_be_verified, string *_signature)
 {
   gpgme_verify_result_t verResult = verify_file_signature(file_to_be_verified, _signature);
-  gpgme_sigsum_t sig_sum = verResult->signatures->summary;
-  string fpr = verResult->signatures->fpr;
-  bool isKeyMissing = (sig_sum & GPGME_SIGSUM_KEY_MISSING) != 0;
-  bool isValid = (sig_sum & GPGME_SIGSUM_VALID) != 0;
-  bool retry = false;
+  gpgme_sigsum_t  sig_sum       = verResult->signatures->summary;
+  string          fpr           = verResult->signatures->fpr;
+  bool            isKeyMissing  = (sig_sum & GPGME_SIGSUM_KEY_MISSING)!= 0;
+  bool            isValid       = (sig_sum & GPGME_SIGSUM_VALID)      != 0;
+  bool            retry         = false;
   if (!isValid)
   {
     if (isKeyMissing)
@@ -436,10 +436,10 @@ json open_pgp::verify(const string &file_to_be_verified, string *_signature)
   }
   if (retry)
   {
-    verResult = verify_file_signature(file_to_be_verified, _signature);
-    sig_sum = verResult->signatures->summary;
-    isKeyMissing = (sig_sum & GPGME_SIGSUM_KEY_MISSING);
-    isValid = (sig_sum & GPGME_SIGSUM_VALID) != 0;
+    verResult     = verify_file_signature(file_to_be_verified, _signature);
+    sig_sum       = verResult->signatures->summary;
+    isKeyMissing  = (sig_sum & GPGME_SIGSUM_KEY_MISSING);
+    isValid       = (sig_sum & GPGME_SIGSUM_VALID) != 0;
   }
   json json;
   json["isValid"]         = isValid;

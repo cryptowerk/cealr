@@ -47,7 +47,7 @@ public:
 
     void addHeader(const string &headerField);
 
-    void setVerbose(const bool bVerbose);
+    void setVerbose(bool bVerbose);
 
     string *get();
 

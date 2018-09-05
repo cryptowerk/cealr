@@ -176,7 +176,7 @@ string *get_string_matching(const string &question, regex regexp)
   return new string(input);
 }
 
-string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps, string nttyError)
+string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps, string noTtyError)
 {
   bool ok = false;
   string input;
@@ -189,7 +189,7 @@ string *get_password(const string &question, int min_length, int min_digits, int
     }
     else
     {
-      cerr << nttyError;
+      cerr << noTtyError;
       exit(1);
     }
     unsigned long length = input.length();
