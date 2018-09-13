@@ -17,9 +17,7 @@ class MessageDigest
 public:
   static MessageDigest *getInstance(const string &inst);
   
-  virtual ~MessageDigest()
-  {
-  }
+  virtual ~MessageDigest() = default;
 
   virtual void update(void *data, size_t size) = 0;
   virtual unsigned char *digest() = 0;

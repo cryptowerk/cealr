@@ -13,8 +13,6 @@
 #include "curl_util.h"
 #include "file_util.h"
 #include <openssl/sha.h>
-//#include <zconf.h>
-//#include <sys/termios.h>
 
 string *cealr::hash_file(const string file)
 {
@@ -397,7 +395,7 @@ void cealr::verify()
            << " time(s)." << endl;
       cout << "Details:" << endl;
       // print out details for the document what blockchain(s), transaction(s), time registered
-      // todo implement Verification as far as reasonable (traverse SmartStamp(s), verify signature, if it is there)!
+      // Verification (traverse SmartStamp(s), verify signature, if it is there)!
       for (auto &doc : docs)
       {
         string doc_name = doc["name"];
@@ -411,37 +409,49 @@ void cealr::verify()
           cout << " as " << doc_name;
         }
         cout << endl;
-        auto bc_regs = doc["blockchainRegistrations"];
-        if (bc_regs != NULL)
-        {
-          for (auto bcReg:bc_regs)
-          {
-            auto bcDesc = bcReg["blockChainDesc"];
-            auto bc = bcDesc["generalName"];
-            auto instance = bcDesc["instanceName"];
-            cout << " put into blockchain: " << bc << ":" << instance << " at "
-                 << format_time(bcReg["insertedIntoBlockchainAt"], "%H:%M:%ST%Y-%m-%d")
-                 << ", Transaction ID: " << bcReg["blockChainId"] << endl;
-          }
-        }
-        else
-        {
-          cout << endl << "There was no blockchain registration for this file." << endl;
-        }
+        //todo implement minimalistic server response for better scalability
+//        auto bc_regs = doc["blockchainRegistrations"];
+//        if (bc_regs != NULL)
+//        {
+//          for (auto bcReg:bc_regs)
+//          {
+//            auto bcDesc = bcReg["blockChainDesc"];
+//            auto bc = bcDesc["generalName"];
+//            auto instance = bcDesc["instanceName"];
+//            cout << " put into blockchain: " << bc << ":" << instance << " at "
+//                 << format_time(bcReg["insertedIntoBlockchainAt"], "%H:%M:%ST%Y-%m-%d")
+//                 << ", Transaction ID: " << bcReg["blockChainId"] << endl;
+//          }
+//        }
+//        else
+//        {
+//          cout << endl << "There was no blockchain registration for this file." << endl;
+//        }
+        // todo minimize server response to one smart stamp and analyze metadata from document smart stamp
         verify_metadata(doc);
         const auto smartStamps = doc["smartStamps"];
         if (smartStamps!= nullptr)
         {
           const auto sObj = smartStamps[0];
           string smartStampTextualRepresentation = sObj["data"];
+          SmartStamp smartStamp(smartStampTextualRepresentation);
+          smartStamp.initFields();
+          auto bc = smartStamp.getBlockchain();
+          auto bcDesc = bc->getBlockChainDesc()->toString();
           if (verbose)
           {
-            cout << smartStampTextualRepresentation << endl;
+            cout << " put into blockchain: " << bcDesc << " at "
+                 << format_time(bc->getInsertedIntoBlockchainAt(), "%H:%M:%ST%Y-%m-%d")
+                 << ", Transaction ID: " << bc->getBlockChainId() << endl;
           }
-          SmartStamp smartStamp(smartStampTextualRepresentation);
           vector<char> hash = from_hex(hex_hashes);
 //        SmartStamp::VerificationResult verificationResult=smartStamp.verifyByHash(documentHash,anchorInBlockchain,nullptr,true);
           SmartStamp::VerificationResult *verificationResult = smartStamp.verifyByHash((unsigned char *) &(hash[0]), nullptr, true);
+          cout << verificationResult->toJson().dump(2, ' ') << endl;
+        }
+        else
+        {
+          cout << endl << "There was no blockchain registration for this file." << endl;
         }
       }
     }

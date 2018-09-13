@@ -9,8 +9,8 @@
  *
  */
 
-#include <vector>
-#include <sstream>
+//#include <vector>
+//#include <sstream>
 #include "open_pgp.h"
 
 open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const string *email_addr)
@@ -133,7 +133,7 @@ string open_pgp::sign(const string file_to_be_signed)
     throw pgp_exception(__FILE__, __LINE__, gpgme_err_code_from_errno(errno));
   }
 
-  char *arr = new char[size + 1];
+  auto arr = new char[size + 1];
   copy(sig, &(sig[size]), arr);
   arr[size] = 0;
   signature = new string(arr);
@@ -361,7 +361,7 @@ list<map<string, string>> open_pgp::list_private_keys(const string *opt_pattern)
 bool open_pgp::can_sign(gpgme_key_t _key)
 {
   // bad practice to use main key for signing
-  bool canSign = static_cast<bool>(_key->can_sign);
+  auto canSign = static_cast<bool>(_key->can_sign);
   gpgme_subkey_t subKey = _key->subkeys;
   while (!canSign && subKey)
   {

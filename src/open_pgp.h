@@ -12,9 +12,9 @@
 #ifndef CEALR_OPENPGPSIGN_H
 #define CEALR_OPENPGPSIGN_H
 
-#include <cstdlib>
-#include <cerrno>
-#include <clocale>
+//#include <cstdlib>
+//#include <cerrno>
+//#include <clocale>
 #include <list>
 #include <map>
 #include "Properties.h"

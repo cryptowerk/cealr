@@ -50,7 +50,7 @@ public:
 class ByteArrayInputStream : streambuf
 {
 public:
-  ByteArrayInputStream(vector<char> *data) : streambuf()
+  explicit ByteArrayInputStream(vector<char> *data) : streambuf()
   {
     char *gbeg = data->begin().base();
     setg(gbeg, gbeg, data->end().base());
@@ -247,7 +247,7 @@ public:
 
   string *readString()
   {
-    int length= static_cast<int>(readInt());
+    auto length= static_cast<int>(readInt());
     char textRaw[length+1];
     readRaw(textRaw, length);
     textRaw[length] = '\0';
@@ -300,7 +300,7 @@ public:
   }
 
   template <class T>
-  list<T> readOptList(Reader<T> &reader)
+  list<T> *readOptList(Reader<T> &reader)
   {
       return readBoolean()? readList(reader):nullptr;
   }
