@@ -26,6 +26,7 @@ static const int MAX_BUFFER_SIZE = 0x4000;
 #include <cstdlib>
 #include "Properties.h"
 #include "open_pgp.h"
+#include "smart_stamp.h"
 #include <nlohmann/json.hpp>
 #include <set>
 #include <regex>
@@ -100,6 +101,7 @@ public:
   void verify();
 
   void verify_metadata(json doc);
+
 };
 
 #endif //CEALR_H

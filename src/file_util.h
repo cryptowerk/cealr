@@ -103,7 +103,6 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 #else
 #define PATH_SEPARATOR '/'
 #include <string>
-//#include <cstdlib>
 #include <sys/stat.h>
 //#include <sys/types.h>
 //#include <sys/errno.h>
@@ -146,5 +145,9 @@ char get_single_character_answer(const string &question, set<char> valid_answers
 string format_time(time_t timestamp, string format);
 
 string trim(string str);
+
+int hex_digit_val(char ch);
+
+vector<char> from_hex(const string &hex);
 
 #endif //CEALR_FILE_UTIL_H

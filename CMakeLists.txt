@@ -4,7 +4,7 @@ project(cealr)
 set(CMAKE_CXX_STANDARD 11)
 cmake_policy(SET CMP0060 NEW)
 
-set(SOURCE_FILES src/cealr.cpp src/cealr.h src/Properties.cpp src/Properties.h src/curl_util.cpp src/curl_util.h src/file_util.cpp src/file_util.h src/open_pgp.cpp src/open_pgp.h)
+set(SOURCE_FILES src/cealr.cpp src/cealr.h src/Properties.cpp src/Properties.h src/curl_util.cpp src/curl_util.h src/file_util.cpp src/file_util.h src/open_pgp.cpp src/open_pgp.h src/smart_stamp.cpp src/smart_stamp.h src/serialized_data_format.cpp src/serialized_data_format.h src/message_digest.cpp src/message_digest.h src/base64.h)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(NLOHMANN_JSON_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/nlohmann)

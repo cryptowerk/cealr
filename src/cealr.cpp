@@ -429,6 +429,20 @@ void cealr::verify()
           cout << endl << "There was no blockchain registration for this file." << endl;
         }
         verify_metadata(doc);
+        const auto smartStamps = doc["smartStamps"];
+        if (smartStamps!= nullptr)
+        {
+          const auto sObj = smartStamps[0];
+          string smartStampTextualRepresentation = sObj["data"];
+          if (verbose)
+          {
+            cout << smartStampTextualRepresentation << endl;
+          }
+          SmartStamp smartStamp(smartStampTextualRepresentation);
+          vector<char> hash = from_hex(hex_hashes);
+//        SmartStamp::VerificationResult verificationResult=smartStamp.verifyByHash(documentHash,anchorInBlockchain,nullptr,true);
+          SmartStamp::VerificationResult *verificationResult = smartStamp.verifyByHash((unsigned char *) &(hash[0]), nullptr, true);
+        }
       }
     }
     else
@@ -709,12 +723,27 @@ int main(int argc, const char **argv)
   }
   catch (pgp_exception &e)
   {
-    cerr << e.what();
+    cerr << e.what() << endl;
+    exit(1);
+  }
+  catch (base64_exception &e)
+  {
+    cerr << e.what() << endl;
+    exit(1);
+  }
+  catch (SmartStampError &e)
+  {
+    cerr << e.what() << endl;
     exit(1);
   }
   catch (file_exception &e)
   {
-    cerr << e.what();
+    cerr << e.what() << endl;
+    exit(1);
+  }
+  catch (exception &e)
+  {
+    cerr << e.what() << endl;
     exit(1);
   }
 }

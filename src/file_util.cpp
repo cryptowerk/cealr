@@ -273,3 +273,22 @@ string trim(const string str)
   }
   return s;
 }
+
+int hex_digit_val(const char ch)
+{
+  const auto l_ch = tolower(ch);
+  return isdigit(l_ch) ? l_ch - '0' : l_ch - 'a' + 10;
+}
+
+vector<char> from_hex(const string &hex)
+{
+  const auto len = hex.size() / 2;
+  vector<char> ret = vector<char>(len, 0);
+  for (int i = 0, j=0; i < len; i++)
+  {
+    const auto raw = hex_digit_val(hex[j++]) << 4;
+    ret[i] = (char) (raw | hex_digit_val(hex[j++]));
+  }
+
+  return ret;
+}

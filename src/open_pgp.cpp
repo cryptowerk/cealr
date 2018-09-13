@@ -9,8 +9,8 @@
  *
  */
 
-//#include <vector>
-//#include <sstream>
+#include <vector>
+#include <sstream>
 #include "open_pgp.h"
 
 open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const string *email_addr)
@@ -85,7 +85,7 @@ open_pgp::~open_pgp()
   delete key_name;
   delete key_email;
   delete signature;
-  delete key_server;
+//  delete key_server;
 }
 
 string open_pgp::sign(const string file_to_be_signed)
@@ -394,9 +394,6 @@ json open_pgp::toJson() const
   return json;
 }
 
-//todo implement verifying/trusting public key by key ID
-
-
 //todo implement importing/generating key pair
 
 // verify signature
@@ -575,6 +572,10 @@ bool open_pgp::check_trust(gpgme_key_t &_key)
 
 gpgme_key_t open_pgp::find_key(const string &fpr, gpgme_keylist_mode_t mode)
 {
+  if (mode|GPGME_KEYLIST_MODE_EXTERN)
+  {
+    gpgme_set_global_flag("auto-key-locate", key_server->c_str());
+  }
   gpgme_set_keylist_mode(ctx, mode);
   gpgme_key_t _k = nullptr;
   err = gpgme_op_keylist_start(ctx, fpr.c_str(), 0);
