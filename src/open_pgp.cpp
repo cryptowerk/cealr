@@ -103,11 +103,13 @@ string open_pgp::sign(const string file_to_be_signed)
   }
   select_best_signing_key();
   if (!key){
-    cerr << "There is no private key to sign with installed with your GPG right now." << endl
-         << "Please use gpg to import or generate a private key for you. " << endl
-         << "Ideally it should have the same email address as your CryptoWerk account" << endl
-         << "and it should have as many key signers as possible in order to establish" << endl
-         << "trust among the people who want to verify your signatures." << endl;
+    stringstream s;
+    s << "There is no private key to sign with installed with your GPG right now." << endl
+      << "Please use gpg to import or generate a private key for you. " << endl
+      << "Ideally it should have the same email address as your CryptoWerk account" << endl
+      << "and it should have as many key signers as possible in order to establish" << endl
+      << "trust among the people who want to verify your signatures." << endl;
+    throw pgp_exception(__FILE__, __LINE__, s.str());
   }
 
   // Sign the contents of "in" using the defined mode and place it into "out"
@@ -193,6 +195,7 @@ void open_pgp::select_best_signing_key()
               if (count_key_sigs == most_key_signatures)
               {
                 // todo use key with most information?
+                most_signed_key = _key;
               }
               else
               {

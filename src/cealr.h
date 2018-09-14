@@ -33,12 +33,24 @@ using json = nlohmann::json;
 
 using namespace std;
 
+/*!
+@brief exception print_usage_message is used to inform how to call cealr
+
+exception print_usage_message is thrown when command line parameters were not detected or wrong.
+It causes to print the usage message for cealr
+*/
 class print_usage_msg : public exception
 {
 private:
-  runtime_error err_msg;
-  string cmd_name;
+  runtime_error err_msg;  //!< contains the part for cerr
+  string cmd_name;        //!< param[0], the command itself (should be cealr)
 public:
+/*!
+@brief method to print usage message
+
+exception print_usage_message is thrown when command line parameters were not detected or wrong.
+It causes to print the usage message for cealr
+*/
   explicit print_usage_msg(const string &);
 
   print_usage_msg(string, string *);
