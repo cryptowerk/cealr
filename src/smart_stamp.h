@@ -1,8 +1,13 @@
-#include <utility>
-
-//
-// Created by Olaf Zumpe on 9/5/18.
-//
+/*
+ * _____ _____  _____  ___    ______
+ *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
+ *|  |__|   __|   _   |   |__|
+ *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
+ *
+ *Licensed under the Apache 2.0 License <https://opensource.org/licenses/Apache-2.0>.
+ *Copyright (c) 2018 Cryptowerk <http://www.cryptowerk.com>.
+ *
+ */
 
 #ifndef CEALR_SMART_STAMP_H
 #define CEALR_SMART_STAMP_H

@@ -1,29 +1,23 @@
-#ifndef _MACARON_BASE64_H_
-#define _MACARON_BASE64_H_
-
-/**
- * The MIT License (MIT)
+/*
+ * _____ _____  _____  ___    ______
+ *|   __|   __|/  _  \|   |  |   _  |  Command line tool for sealing files with Cryptowerk API
+ *|  |__|   __|   _   |   |__|
+ *|_____|_____|__| |__|______|__|\__\  https://github.com/cryptowerk/cealr
+ *
+ * The original algorithms were copied from
  * Copyright (c) 2016 tomykaira
  *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
+ * https://gist.github.com/tomykaira/f0fd86b6c73063283afe550bc5d77594#file-base64-h
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
+ * The original code is licensed under MIT License <https://opensource.org/licenses/MIT>
+ * The changes made to adapt the code to the purposes of CryptoWerk are licensed under the
+ * Apache 2.0 License <https://opensource.org/licenses/Apache-2.0>.
+ * Copyright (c) 2018 Cryptowerk <http://www.cryptowerk.com>.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+#ifndef CEALR_BASE64_H
+#define CEALR_BASE64_H
 
 #include <string>
 #include <vector>
@@ -159,4 +153,4 @@ public:
   }
 };
 
-#endif /* _MACARON_BASE64_H_ */
+#endif /* CEALR_BASE64_H */

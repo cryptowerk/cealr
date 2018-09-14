@@ -39,7 +39,8 @@ public:
 
     curl_util(string url);
 
-    curl_util(string, bool);
+
+    curl_util(string url, bool bVerbose);
 
     ~curl_util();
 
