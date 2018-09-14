@@ -36,8 +36,7 @@ private:
   runtime_error _what;
 
 public:
-  base64_exception(const string &file, const int line, const string &errStr) : _what(
-      ("" + file + ":" + to_string(line) + ": " + errStr).c_str()) {}
+  base64_exception(const string &file, const int line, const string &errStr) : _what(("" + file + ":" + to_string(line) + ": " + errStr).c_str()) {}
 
   const char *what()
   {

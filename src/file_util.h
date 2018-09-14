@@ -118,6 +118,8 @@ static const mode_t S_IXOTH = 0x00010000;           // not relevant
 
 using namespace std;
 
+#define MAX_BUFFER_SIZE 0x4000
+
 bool dir_exists(const string &path);
 
 bool fileExists(const string &path);
@@ -134,8 +136,6 @@ mode_t set_file_permissions(string path, mode_t attrs);
 
 string *get_password(const string &question, int min_length, int min_digits, int min_small, int min_caps, string noTtyError);
 
-string to_hex(const unsigned char *hash, int size);
-
 string *get_string_matching(const string &question, regex regexp);
 
 string *get_opt_str(const string &question);
@@ -148,6 +148,12 @@ string trim(string str);
 
 int hex_digit_val(char ch);
 
+string to_hex(const unsigned char *data, size_t size);
+
 vector<char> from_hex(const string &hex);
+
+string getHashAsHex(istream &is);
+
+unsigned char *getHash(istream &is, unsigned char *md);
 
 #endif //CEALR_FILE_UTIL_H

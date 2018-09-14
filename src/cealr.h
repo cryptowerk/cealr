@@ -19,8 +19,6 @@ static const char *const DEFAULT_SERVER = "https://devapi1.cryptowerk.com/platfo
 static const char *const DEFAULT_SERVER = "http://localhost:8080/platform";
 #endif // if CMAKE_BUILD_TYPE==DEBUG
 
-static const int MAX_BUFFER_SIZE = 0x4000;
-
 #include <string>
 #include <exception>
 #include <cstdlib>
@@ -77,7 +75,7 @@ private:
 
   string *read_password();
 
-  string *hash_file(string file);
+  string hash_file(string file);
 
   void add2hashes(const string &file_name, const string *version);
 
@@ -100,8 +98,7 @@ public:
 
   void verify();
 
-  void verify_metadata(json doc);
-
+  void verify_metadata(SmartStamp &smartStamp);
 };
 
 #endif //CEALR_H

@@ -353,6 +353,10 @@ public:
 
     ~SealedMetaData() override;
 
+    string *getData() const;
+
+    list<vector<char>> *getMetaDataStamps() const;
+
     void execute(OperationEvaluator &vm) const override;
 
 //    void write(sdf_ostream out)
@@ -364,15 +368,15 @@ public:
   };
 
 private:
-  vector<char>     *data;
-  bool              parseTried    = false;
-  unsigned char    *docHash       = nullptr;
-  unsigned char    *rootHash      = nullptr;
-  list<Operation*> *operations    = nullptr;
-  Blockchain       *blockchain    = nullptr;
-  DocumentInfo     *documentInfo  = nullptr;
-  SealedMetaData   *sealedMetaData= nullptr;
-  BundleMethod      bundleMethod  = BundleMethod::BALANCED_MERKLE_TREE;
+  vector<char>      *data;
+  bool               parseTried     = false;
+  unsigned char     *docHash        = nullptr;
+  unsigned char     *rootHash       = nullptr;
+  list<Operation*>  *operations     = nullptr;
+  Blockchain        *blockchain     = nullptr;
+  DocumentInfo      *documentInfo   = nullptr;
+  SealedMetaData    *sealedMetaData = nullptr;
+  BundleMethod       bundleMethod   = BundleMethod::BALANCED_MERKLE_TREE;
 
 
 public:
@@ -382,6 +386,8 @@ public:
 //  }
 
   explicit SmartStamp(const string &textRepresentation);
+
+  explicit SmartStamp(const vector<char> _data);
 
   ~SmartStamp();
 

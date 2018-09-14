@@ -12,43 +12,15 @@
 #include "cealr.h"
 #include "curl_util.h"
 #include "file_util.h"
-#include <openssl/sha.h>
 
-string *cealr::hash_file(const string file)
+string cealr::hash_file(const string file)
 {
   ifstream ifs(file.c_str(), ifstream::binary);
-  string *hash_hex = nullptr;
+  string hash_hex;
   if (ifs.is_open())
   {
-    SHA256_CTX sha256_ctx;
-    SHA256_Init(&sha256_ctx);
-    ifs.unsetf(ios::skipws);
-    ifs.seekg(0, std::ios::end);
-    auto size = (unsigned long) ifs.tellg();
-    ifs.seekg(0, std::ios::beg);
-
-    // reserve capacity
-    unsigned long buf_size = (size < MAX_BUFFER_SIZE) ? size : MAX_BUFFER_SIZE;
-    char buffer[buf_size];
-    // read data
-    unsigned long ptr = buf_size; // init with ptr after first read
-    do
-    {
-      ifs.read(buffer, buf_size);
-      SHA256_Update(&sha256_ctx, &buffer, buf_size);
-      // since read does not return how many bytes are read, we have to keep track ourselves
-      if ((ptr += buf_size) > size)
-      {
-        buf_size -= ptr - size;
-        ptr = size;
-      }
-      // ifs.eof() is only true if we read beyond eof. We are keeping track of the remaining bytes to read and read
-      // never more than available, so eof is never triggered and we have to exit based on buf_size==0
-    } while (buf_size);
+    hash_hex = getHashAsHex(ifs);
     ifs.close();
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_Final(hash, &sha256_ctx);
-    hash_hex = new string(to_hex(hash, SHA256_DIGEST_LENGTH));
   }
   else
   {
@@ -224,12 +196,11 @@ cealr::cealr(const int argc, const char **argv)
 
 void cealr::add2hashes(const string &file_name, const string *version)
 {
-  string *hash_hex = hash_file(file_name);
   if (!hex_hashes.empty())
   {
     hex_hashes.append(",");
   }
-  hex_hashes.append(*hash_hex);
+  hex_hashes.append(hash_file(file_name));
   file_names.push_back(file_name);
   string *doc_name = file_name_without_path(file_name);
   if (!doc_names.empty())
@@ -427,8 +398,8 @@ void cealr::verify()
 //        {
 //          cout << endl << "There was no blockchain registration for this file." << endl;
 //        }
-        // todo minimize server response to one smart stamp and analyze metadata from document smart stamp
-        verify_metadata(doc);
+        //todo minimize server response to one smart stamp
+//        verify_metadata(doc);
         const auto smartStamps = doc["smartStamps"];
         if (smartStamps!= nullptr)
         {
@@ -438,16 +409,25 @@ void cealr::verify()
           smartStamp.initFields();
           auto bc = smartStamp.getBlockchain();
           auto bcDesc = bc->getBlockChainDesc()->toString();
-          if (verbose)
-          {
-            cout << " put into blockchain: " << bcDesc << " at "
-                 << format_time(bc->getInsertedIntoBlockchainAt(), "%H:%M:%ST%Y-%m-%d")
-                 << ", Transaction ID: " << bc->getBlockChainId() << endl;
-          }
+          // todo: output verification value (SW+root hash) to verify it in bc browser
+          cout << " Registered with blockchain: " << bcDesc << " at "
+               << format_time(bc->getInsertedIntoBlockchainAt(), "%H:%M:%ST%Y-%m-%d")
+               << ", Transaction ID: " << bc->getBlockChainId() << endl;
+          // and analyze metadata from document smart stamp
+          verify_metadata(smartStamp);
+
           vector<char> hash = from_hex(hex_hashes);
-//        SmartStamp::VerificationResult verificationResult=smartStamp.verifyByHash(documentHash,anchorInBlockchain,nullptr,true);
+          // todo if root is retrievable by bc call with:
+          // SmartStamp::VerificationResult verificationResult=smartStamp.verifyByHash((unsigned char *) &(hash[0]), anchorInBlockchain, nullptr, true);
           SmartStamp::VerificationResult *verificationResult = smartStamp.verifyByHash((unsigned char *) &(hash[0]), nullptr, true);
-          cout << verificationResult->toJson().dump(2, ' ') << endl;
+            if (verificationResult->hasBeenVerified())
+            {
+              cout << "The verification of the smart stamp was successful" << endl;
+            }
+            else
+            {
+              cout << "The hash of the file does not match the stored hash in the smart stamp. Verification failed!" << endl;
+            }
         }
         else
         {
@@ -466,67 +446,114 @@ void cealr::verify()
   }
 }
 
-void cealr::verify_metadata(json doc)
+void cealr::verify_metadata(SmartStamp &smartStamp)
 {
-  auto sealed_meta_data = doc["sealedMetaData"];
+  auto sealed_meta_data = smartStamp.getSealedMetaData();
   if (sealed_meta_data != nullptr)
   {
-    // todo check MetaData hash and traverse metadata SmartStamp(s)
-    // todo to root hash print out what root hash needs to be verified in which TX of which blockchain
-    string sContent = sealed_meta_data["content"];
-    auto content = json::parse(sContent); // keep string to build hash
+    const auto sealedContent = *sealed_meta_data->getData();
+        auto content = json::parse(sealedContent); // keep string to build hash
     // check hash of sealed_meta_data, output verification info of sealed metadata
     auto doc_hash_meta = content["docHash"];
-    if (hex_hashes != doc_hash_meta)
+    const auto hasJson = doc_hash_meta != nullptr;
+    istream *is;
+    if (hasJson)
     {
-      // todo if doc_hash_meta is null check if it works with string method on server
-      // todo (convert hash to byte array add sContent as byte array hash and compare
-      // with leaf hash from meta data smart stamp)
-      cout << "Meta data mismatch: The document hash in the metadata is not the hash of the file to be verified." << endl;
+      is = new istringstream(sealedContent);
     }
     else
     {
-      // verification and output of authenticity/signer
-      string key_id = content["keyId"];
-      string signature = content["signature"];
-      open_pgp open_pgp(GPGME_SIG_MODE_DETACH, properties);
-      for (const string &file_name:file_names)
+      // in this case we need to append the document hash to the stream before we create the meta data hash 
+      vector<char> v1(sealedContent.begin(), sealedContent.end());
+      auto hash = smartStamp.getDocHash();
+      v1.insert(v1.end(), hash, hash+SHA256_DIGEST_LENGTH);
+      is = new istringstream(string(&v1[0],v1.size()));
+    }
+    unsigned char metadataHash[SHA256_DIGEST_LENGTH];
+    getHash(*is, metadataHash);
+    delete is;
+    for (vector<char> &smStamp:*sealed_meta_data->getMetaDataStamps())
+    {
+      SmartStamp smartStampMeta(smStamp);
+      SmartStamp::VerificationResult *md_verified = smartStampMeta.verifyByHash(metadataHash, nullptr, false);
+      if (md_verified->hasBeenVerified())
       {
-        json verification_js = open_pgp.verify(file_name, &signature);
+        auto bc = smartStampMeta.getBlockchain();
+        auto bcDesc = bc->getBlockChainDesc()->toString();
+        string regDat;
+        unsigned char _sw[] {'S','W'};
+        regDat.append(to_hex(_sw, 2));
+        auto str = to_hex(smartStampMeta.getRootHash(), SHA256_DIGEST_LENGTH);
+        regDat.append(str);
+        cout << " Metadata is valid and must have been registered with blockchain: " << bcDesc << " at "
+             << format_time(bc->getInsertedIntoBlockchainAt(), "%H:%M:%ST%Y-%m-%d")
+             << ", Transaction ID: " << bc->getBlockChainId() << endl
+             << " Please verify that the data in this transaction is \"" << regDat << "\"." << endl;
+      }
+      else
+      {
+        cout << "The hash over the meta data does not match the hash in the meta data smart stamp. Verification failed. The data seems to be corrupted." << endl;
+        return;
+      }
+    }
+
+    if (hasJson)
+    {
+      // verification and output of authenticity/signer
+      if (content.count("signature"))
+      {
+        string signature = content["signature"];
         if (verbose)
         {
-          cout << verification_js.dump(2, ' ', false) << endl;
+          cout << endl << "The metadata contains a signature of a file. Trying to verify it ..." << endl << endl;
         }
-        bool is_valid = verification_js["isValid"];
-        cout << "The signature of \"" << file_name << "\" is " << (is_valid ? "matching" : "not matching")
-             << " the stored signature on the server." << endl;
-        if (is_valid)
+        string key_id = content["keyId"];
+        open_pgp open_pgp(GPGME_SIG_MODE_DETACH, properties);
+        for (const string &file_name:file_names)
         {
-          cout << "The file was signed on " << format_time(verification_js["timestamp"], "%H:%M:%ST%Y-%m-%d")
-               << " with the key with ID " << key_id << endl;
-          auto name = verification_js["name"];
-          if (name != nullptr)
+          json verification_js = open_pgp.verify(file_name, &signature);
+          if (verbose)
           {
-            cout << "The signing key was issued by " << verification_js["name"] << endl;
+            cout << verification_js.dump(2, ' ', false) << endl;
           }
-          else
+          bool is_valid = verification_js["isValid"];
+          cout << "The signature of \"" << file_name << "\" is " << (is_valid ? "matching" : "not matching")
+               << " the stored signature on the server." << endl;
+          if (is_valid)
           {
-            cout << "The signing key has no name" << endl;
+            cout << "The file was signed on " << format_time(verification_js["timestamp"], "%H:%M:%ST%Y-%m-%d")
+                 << " with the key with ID " << key_id << endl;
+            auto name = verification_js["name"];
+            if (name != nullptr)
+            {
+              cout << "The signing key was issued by " << verification_js["name"] << endl;
+            }
+            else
+            {
+              cout << "The signing key has no name" << endl;
+            }
+            string signature_email = verification_js["email"];
+            cout << "The email address in the signing key is " << signature_email;
+            auto submitter_email = content["verifiedSubmitterEmail"];
+            if (submitter_email != nullptr && (submitter_email == signature_email))
+            {
+              cout
+                  << " and matches the verified email address of the CryptoWerk customer who submitted this file for sealing.";
+            }
+            else
+            {
+              cout << endl
+                   << "However. The verified email address of the CryptoWerk customer who submitted this file for sealing is "
+                   << submitter_email;
+            }
+            cout << endl << endl;
           }
-          string signature_email = verification_js["email"];
-          cout << "The email address in the signing key is " << signature_email;
-          auto submitter_email = content["verifiedSubmitterEmail"];
-          if (submitter_email != nullptr && (submitter_email == signature_email))
-          {
-            cout << " and matches the verified email address of the CryptoWerk customer who submitted this file for sealing.";
-          }
-          else
-          {
-            cout << endl << "However. The verified email address of the CryptoWerk customer who submitted this file for sealing is " << submitter_email;
-          }
-          cout << endl << endl;
         }
       }
+    }
+    else
+    {
+      cout << "Metadata has valid tata in it. It cannot be verified by this cealr version" << endl;
     }
   }
 }

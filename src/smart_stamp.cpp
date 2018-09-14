@@ -1,5 +1,7 @@
 #include <utility>
 
+#include <utility>
+
 //
 // Created by Olaf Zumpe on 9/5/18.
 //
@@ -9,6 +11,11 @@
 SmartStamp::SmartStamp(const string &textRepresentation)
 {
   data = base64::decode(textRepresentation);
+}
+
+SmartStamp::SmartStamp(vector<char> _data)
+{
+  data = new vector<char>(_data.begin(), _data.end());
 }
 
 SmartStamp::~SmartStamp()
@@ -549,5 +556,15 @@ void SmartStamp::SealedMetaData::execute(SmartStamp::OperationEvaluator &vm) con
   {
     vm.instruct(infoText);
   }
+}
+
+string *SmartStamp::SealedMetaData::getData() const
+{
+  return data;
+}
+
+list<vector<char>> *SmartStamp::SealedMetaData::getMetaDataStamps() const
+{
+  return metaDataStamps;
 }
 

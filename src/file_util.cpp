@@ -10,6 +10,7 @@
  */
 
 #include "file_util.h"
+#include <openssl/sha.h>
 
 bool dir_exists(const string &path)
 {
@@ -102,12 +103,12 @@ mode_t set_file_permissions(const string path, const mode_t attrs)
   return attr1;
 }
 
-string to_hex(const unsigned char *hash, const int size)
+string to_hex(const unsigned char *data, const size_t size)
 {
   stringstream buf;
   for (int i = 0; i < size; i++)
   {
-    buf << hex << setw(2) << setfill('0') << (int) hash[i];
+    buf << hex << setw(2) << setfill('0') << (int) data[i];
   }
 
   return buf.str();
@@ -291,4 +292,43 @@ vector<char> from_hex(const string &hex)
   }
 
   return ret;
+}
+
+string getHashAsHex(istream &is)
+{
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  return to_hex(getHash(is, hash), SHA256_DIGEST_LENGTH);
+}
+
+unsigned char *getHash(istream &is, unsigned char *md)
+{
+  string *hash_hex;
+  SHA256_CTX sha256_ctx;
+  SHA256_Init(&sha256_ctx);
+  is.unsetf(ios_base::skipws);
+  is.seekg(0, ios_base::end);
+  auto size = (unsigned long) is.tellg();
+  is.seekg(0, ios_base::beg);
+
+  // reserve capacity
+  unsigned long buf_size = (size < MAX_BUFFER_SIZE) ? size : MAX_BUFFER_SIZE;
+  char buffer[buf_size];
+  // read data
+  unsigned long ptr = buf_size; // init with ptr after first read
+  do
+  {
+    is.read(buffer, buf_size);
+    SHA256_Update(&sha256_ctx, &buffer, buf_size);
+    // since read does not return how many bytes are read, we have to keep track ourselves
+    if ((ptr += buf_size) > size)
+    {
+      buf_size -= ptr - size;
+      ptr = size;
+    }
+    // is.eof() is only true if we read beyond eof. We are keeping track of the remaining bytes to read and read
+    // never more than available, so eof is never triggered and we have to exit based on buf_size==0
+  } while (buf_size);
+  SHA256_Final(md, &sha256_ctx);
+
+  return md;
 }
