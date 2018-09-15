@@ -283,17 +283,6 @@ public:
       return static_cast<char>(b);
   }
 
-//  list<vector<char>> *readByteBlockList()
-//  {
-//    auto *lst = new list<vector<char>>();
-//    long length = readInt();
-//    for (long i=0;i<length;i++)
-//    {
-//      lst->push_back(*readByteBlock());
-//    }
-//    return lst;
-//  }
-
   template <class T>
   list<T> *readList(Reader<T> reader)
   {
