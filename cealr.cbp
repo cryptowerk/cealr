@@ -92,10 +92,10 @@
 		<Unit filename="/Users/olaf/CLionProjects/cealr/src/curl_util.h">
 			<Option target="cealr"/>
 		</Unit>
-		<Unit filename="/Users/olaf/CLionProjects/cealr/src/Properties.cpp">
+		<Unit filename="/Users/olaf/CLionProjects/cealr/src/properties.cpp">
 			<Option target="cealr"/>
 		</Unit>
-		<Unit filename="/Users/olaf/CLionProjects/cealr/src/Properties.h">
+		<Unit filename="/Users/olaf/CLionProjects/cealr/src/properties.h">
 			<Option target="cealr"/>
 		</Unit>
 		<Unit filename="/Users/olaf/CLionProjects/cealr/src/cealr.cpp">

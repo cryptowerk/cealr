@@ -17,7 +17,7 @@
 //#include <clocale>
 #include <list>
 #include <map>
-#include "Properties.h"
+#include "properties.h"
 #include "file_util.h"
 
 #include <gpgme.h>
@@ -55,7 +55,7 @@ class open_pgp
 private:
   const string *email;
 
-  class Properties *properties;
+  class properties *p_properties;
 
   string *key_id;
   string *key_name;
@@ -76,9 +76,9 @@ private:
 //  gpgme_key_t *list_keys_for_import(const string &fpr, int is_private);
 
 public:
-  open_pgp(gpgme_sig_mode_t _sig_mode, class Properties *_properties);
+  open_pgp(gpgme_sig_mode_t _sig_mode, class properties *_properties);
 
-  open_pgp(gpgme_sig_mode_t _sig_mode, class Properties *_properties, const string *email_addr);
+  open_pgp(gpgme_sig_mode_t _sig_mode, class properties *_properties, const string *email_addr);
 
   virtual ~open_pgp();
 

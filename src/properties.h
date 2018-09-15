@@ -32,27 +32,27 @@ public:
   virtual const char *what();
 };
 
-class Properties : private map<string, string>
+class properties : private map<string, string>
 {
 private:
   string file;
   bool saved;
 public:
-  explicit Properties(const string &);
+  explicit properties(const string &);
 
-  Properties();
+  properties();
 
-  ~Properties();
+  ~properties();
 
   void read_from_file();
 
   const string &getFile() const;
 
-  bool operator==(const Properties &) const;
+  bool operator==(const properties &) const;
 
-  bool operator!=(const Properties &) const;
+  bool operator!=(const properties &) const;
 
-  friend ostream &operator<<(ostream &, const Properties &);
+  friend ostream &operator<<(ostream &, const properties &);
 
   string *get(const string &key, string *default_val = nullptr, bool cloneValue = true);
 

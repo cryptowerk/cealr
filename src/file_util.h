@@ -156,4 +156,6 @@ string getHashAsHex(istream &is);
 
 unsigned char *getHash(istream &is, unsigned char *md);
 
+string *get_env_str(const string &);
+
 #endif //CEALR_FILE_UTIL_H

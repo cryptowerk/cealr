@@ -13,11 +13,11 @@
 //#include <sstream>
 #include "open_pgp.h"
 
-open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const string *email_addr)
+open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, properties *_properties, const string *email_addr)
 {
   sig_mode = _sig_mode;
   email = email_addr;
-  properties = _properties;
+  p_properties = _properties;
   key = nullptr;
   signature = nullptr;
   in = nullptr;
@@ -49,7 +49,7 @@ open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const st
   // Enable ASCII armor on the context
   gpgme_set_armor(ctx, 1);
 
-  key_server = properties->get("keyServer", new string(OPENPGP_DEFAULT_KEYSERVER), false);
+  key_server = p_properties->get("keyServer", new string(OPENPGP_DEFAULT_KEYSERVER), false);
   if (key_server->find("://") == string::npos)
   {
     string *old = key_server;
@@ -58,7 +58,7 @@ open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *_properties, const st
   }
 }
 
-open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, Properties *properties) : open_pgp(_sig_mode, properties, nullptr) {}
+open_pgp::open_pgp(gpgme_sig_mode_t _sig_mode, properties *properties) : open_pgp(_sig_mode, properties, nullptr) {}
 
 open_pgp::~open_pgp()
 {
@@ -630,7 +630,7 @@ bool open_pgp::export_key(const string &fpr)
 
 bool open_pgp::is_key_exported(const string &fpr)
 {
-  string *exported_key_ids = properties->get("exportedKeyIds");
+  string *exported_key_ids = p_properties->get("exportedKeyIds");
   bool exported = true;
   if ((exported_key_ids == nullptr) ||
       (exported_key_ids->find(fpr) == string::npos))
@@ -639,7 +639,7 @@ bool open_pgp::is_key_exported(const string &fpr)
     if ((exported = (_key != nullptr)))
     {
       gpgme_key_release(_key);
-      properties->put("exportedKeyIds", *(exported_key_ids ? &exported_key_ids->append("," + fpr) : new string(fpr)));
+      p_properties->put("exportedKeyIds", *(exported_key_ids ? &exported_key_ids->append("," + fpr) : new string(fpr)));
     }
   }
   delete exported_key_ids;

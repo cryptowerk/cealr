@@ -86,12 +86,12 @@ cealr::cealr(const int argc, const char **argv)
   cmd_name = argc > 0 ? argv[0] : CEALR;
   verbose = false;
 
-  properties = new Properties();
-  cout << *properties << endl;
+  p_properties = new properties();
+  cout << *p_properties << endl;
 
   // should call default constructor
   register_arg_found = false;
-  register_client = false;
+  reg_client = false;
   seal = false;
   sign = false;
   server = nullptr;
@@ -110,7 +110,7 @@ cealr::cealr(const int argc, const char **argv)
     }
     else if (arg == "--register" || arg == "--login")
     {
-      register_client = arg == "--register";
+      reg_client = arg == "--register";
       register_arg_found = true;
     }
     else if (i + 1 < argc && arg == "--seal")
@@ -219,64 +219,19 @@ void cealr::run()
 {
   if (!server)
   {
-    server = properties->get("server", get_env_str("CEALR_SERVER"), false);
+    server = p_properties->get("server", get_env_str("CEALR_SERVER"), false);
     if (!server)
     {
       server = new string(DEFAULT_SERVER);
     }
   }
   //in case of option --seal
-  if (register_arg_found || (seal && !api_key && !properties->get("apiKey") && !properties->get("email")))
+  if (register_arg_found || (seal && !api_key && !p_properties->get("apiKey") && !p_properties->get("email")))
   {
-    // ask if seal without apiKey
-    if (!register_arg_found)
-    {
-      register_client = get_single_character_answer("Are you already registered with Cryptowerk? [y/N]: ", {'Y', 'N'}, 'N') == 'N';
-    }
-    regex email_pattern("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", regex_constants::icase);
-    if (email && !regex_match(*email, email_pattern))
-    {
-      cout << "The parameter \"--email " << email << "\" was not accepted as a valid email address." << endl;
-      email = nullptr;
-    }
-    //in case of registration ask for email, password, first name, last name and optional for org
-    if (!email)
-    {
-      email = get_string_matching("Please enter your email address..................: ", email_pattern);
-    }
-    if (register_client)
-    {
-      //in case of registration ask for email, password, first name, last name and optional for org
-      string first_name, last_name;
-      regex name_pattern = regex("^[[:alpha:] \\-]+$");
-      first_name = *get_string_matching("Please enter your first name.....................: ", name_pattern);
-      last_name = *get_string_matching("Please enter your last name......................: ", name_pattern);
-      string *organization = get_opt_str("Please enter your organization (if applicable)...: ");
-      cout << endl << "Contacting server for user registration\"" << *server << "\"" << endl << endl;
-      // register user
-      json returnJson = register_user(first_name, last_name, organization);
-      properties->remove("apiKey");
-      // safe data on properties
-      // inform about email confirmation
-      cout << "You are now registered with our server \"" << *server << "\"." << endl
-           << "An email has been sent to your account \"" << *email << "\"." << endl
-           << "Please follow the instructions in this email to choose your password and" << endl
-           << "to activate your account." << endl
-           << "After account activation you will be able to use the cealr command line tool to " << endl
-           << "seal files for proof of existence." << endl
-           << endl;
-    }
-    properties->put("email", *email);
-    if (*server != DEFAULT_SERVER)
-    {
-      properties->put("server", *server);
-    }
-    properties->remove("apiKey");
-    properties->remove("apiCredential");
-    properties->save();
+    init_properties();
     // todo No need to exit here, if user just has been created we could wait in cealr (password entry) for activation
     // todo or we exit here and they just need to start cealr again after activation
-    if (register_client)
+    if (reg_client)
     {
       exit(1);
     }
@@ -310,9 +265,9 @@ void cealr::run()
              << "combination which may be used in other systems." << endl;
         exit(1);
       }
-      properties->put("apiKey", *api_key);
-      properties->put("apiCredential", *api_credential);
-      properties->save();
+      p_properties->put("apiKey", *api_key);
+      p_properties->put("apiCredential", *api_credential);
+      p_properties->save();
     }
   }
   if (hex_hashes.empty())
@@ -323,7 +278,7 @@ void cealr::run()
   {
     if (sign)
     {
-      open_pgp open_pgp(GPGME_SIG_MODE_DETACH, properties, email);
+      open_pgp open_pgp(GPGME_SIG_MODE_DETACH, p_properties, email);
       for (const string &file_name:file_names)
       {
         open_pgp.sign(file_name);
@@ -350,6 +305,56 @@ void cealr::run()
   {
     verify();
   }
+}
+
+void cealr::init_properties()
+{
+  // ask if seal without apiKey
+  if (!register_arg_found)
+  {
+    reg_client = get_single_character_answer("Are you already registered with Cryptowerk? [y/N]: ", {'Y', 'N'}, 'N') == 'N';
+  }
+  regex email_pattern("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", regex_constants::icase);
+  if (email && !regex_match(*email, email_pattern))
+  {
+    cout << "The parameter \"--email " << email << "\" was not accepted as a valid email address." << endl;
+    email = nullptr;
+  }
+  //in case of registration ask for email, password, first name, last name and optional for org
+  if (!email)
+  {
+    email = get_string_matching("Please enter your email address..................: ", email_pattern);
+  }
+  if (reg_client)
+  {
+    //in case of registration ask for email, password, first name, last name and optional for org
+    string first_name, last_name;
+    regex name_pattern = regex("^[[:alpha:] \\-]+$");
+    first_name = *get_string_matching("Please enter your first name.....................: ", name_pattern);
+    last_name = *get_string_matching("Please enter your last name......................: ", name_pattern);
+    string *organization = get_opt_str("Please enter your organization (if applicable)...: ");
+    cout << endl << "Contacting server for user registration\"" << *server << "\"" << endl << endl;
+    // register user
+    json returnJson = register_client(first_name, last_name, organization);
+    p_properties->remove("apiKey");
+    // safe data on properties
+    // inform about email confirmation
+    cout << "You are now registered with our server \"" << *server << "\"." << endl
+         << "An email has been sent to your account \"" << *email << "\"." << endl
+         << "Please follow the instructions in this email to choose your password and" << endl
+         << "to activate your account." << endl
+         << "After account activation you will be able to use the cealr command line tool to " << endl
+         << "seal files for proof of existence." << endl
+         << endl;
+  }
+  p_properties->put("email", *email);
+  if (*server != DEFAULT_SERVER)
+  {
+    p_properties->put("server", *server);
+  }
+  p_properties->remove("apiKey");
+  p_properties->remove("apiCredential");
+  p_properties->save();
 }
 
 void cealr::verify()
@@ -508,7 +513,7 @@ void cealr::verify_metadata(SmartStamp &smartStamp)
           cout << endl << "The metadata contains a signature of a file. Trying to verify it ..." << endl << endl;
         }
         string key_id = content["keyId"];
-        open_pgp open_pgp(GPGME_SIG_MODE_DETACH, properties);
+        open_pgp open_pgp(GPGME_SIG_MODE_DETACH, p_properties);
         for (const string &file_name:file_names)
         {
           json verification_js = open_pgp.verify(file_name, &signature);
@@ -604,7 +609,7 @@ json cealr::verify_seal() const
   return ret_json;
 }
 
-json cealr::register_user(const string &firstName, const string &lastName, const string *organization) const
+json cealr::register_client(const string &firstName, const string &lastName, const string *organization) const
 {
   json json;
   json["email"] = *email;
@@ -657,7 +662,7 @@ string *cealr::read_password()
                        " - start cealr directly in a the command line in a console\n"
                        " - set the environment variable CEALR_PASSWORD\n"
                        " - add line password=<your password>\n"
-                       "   in the file \"" + properties->getFile() + "\"\n";
+                       "   in the file \"" + p_properties->getFile() + "\"\n";
       password = get_password(question.str(), 8, 0, 0, 0, nttyErr);
     }
   }
@@ -665,22 +670,11 @@ string *cealr::read_password()
   return password;
 }
 
-string *cealr::get_env_str(const string &envKey) const
-{
-  string *envStr = nullptr;
-  char *envPwd = getenv(envKey.c_str());
-  if (envPwd)
-  {
-    envStr = new string(envPwd);
-  }
-  return envStr;
-}
-
 void cealr::init_from_prop_if_null(string **p_string, const string key)
 {
   if (*p_string == nullptr)
   {
-    *p_string = properties->get(key);
+    *p_string = p_properties->get(key);
   }
 }
 
@@ -706,10 +700,10 @@ cealr::~cealr()
     delete email;
     email = nullptr;
   }
-  if (properties)
+  if (p_properties)
   {
-    delete properties;
-    properties = nullptr;
+    delete p_properties;
+    p_properties = nullptr;
   }
 
 }

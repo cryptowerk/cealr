@@ -332,3 +332,14 @@ unsigned char *getHash(istream &is, unsigned char *md)
 
   return md;
 }
+
+string *get_env_str(const string &envKey)
+{
+  string *envStr = nullptr;
+  char *envPwd = getenv(envKey.c_str());
+  if (envPwd)
+  {
+    envStr = new string(envPwd);
+  }
+  return envStr;
+}

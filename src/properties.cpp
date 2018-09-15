@@ -9,7 +9,7 @@
  *
  */
 
-#include "Properties.h"
+#include "properties.h"
 #include "file_util.h"
 
 file_exception::file_exception(const string &file) : err_msg(("Error on opening file \"" + (file) + "\"").c_str()) {}
@@ -19,15 +19,15 @@ const char *file_exception::what()
   return err_msg.what();
 }
 
-Properties::Properties(const string &fileName)
+properties::properties(const string &fileName)
 {
   set_file(fileName);
   read_from_file();
 }
 
-Properties::Properties() : Properties(DEFAULT_PROPERTIES) {};
+properties::properties() : properties(DEFAULT_PROPERTIES) {};
 
-Properties::~Properties()
+properties::~properties()
 {
   if (!saved)
   {
@@ -35,12 +35,12 @@ Properties::~Properties()
   }
 };
 
-void Properties::set_file(const string &fileName)
+void properties::set_file(const string &fileName)
 {
   file = get_full_file_name(fileName);
 }
 
-const string Properties::get_full_file_name(const string &file_name)
+const string properties::get_full_file_name(const string &file_name)
 {
   string full_name = file_name;
   if ((unsigned char) full_name[0] == '~')
@@ -55,7 +55,7 @@ const string Properties::get_full_file_name(const string &file_name)
   return full_name;
 }
 
-void Properties::read_from_file()
+void properties::read_from_file()
 {
   ifstream ifs(file.c_str());
   if (ifs.is_open())
@@ -83,7 +83,7 @@ void Properties::read_from_file()
   }
 }
 
-void Properties::save()
+void properties::save()
 {
   string *pth = super_path(file);
   if (pth != nullptr)
@@ -112,33 +112,33 @@ void Properties::save()
   }
 }
 
-bool Properties::operator==(const Properties &properties) const
+bool properties::operator==(const properties &properties) const
 {
   return static_cast<const map<string, string> &>(*this) == static_cast<const map<string, string> &>(properties) &&
          file == properties.file;
 }
 
-bool Properties::operator!=(const Properties &properties) const
+bool properties::operator!=(const properties &properties) const
 {
   return !(properties == *this);
 }
 
-const string &Properties::getFile() const
+const string &properties::getFile() const
 {
   return file;
 }
 
-ostream &operator<<(ostream &os, const Properties &properties)
+ostream &operator<<(ostream &os, const properties &properties)
 {
   os << "Properties file: " << properties.file << endl;
   for (const auto &p : properties)
   {
-    os << "Properties[" << p.first << "] = " << p.second << endl;
+    os << "properties[" << p.first << "] = " << p.second << endl;
   }
   return os;
 }
 
-string *Properties::get(const string &key, string *default_val, const bool cloneValue)
+string *properties::get(const string &key, string *default_val, const bool cloneValue)
 {
   if (count(key))
   {
@@ -157,13 +157,13 @@ string *Properties::get(const string &key, string *default_val, const bool clone
   }
 }
 
-void Properties::put(const string &key, const string &val)
+void properties::put(const string &key, const string &val)
 {
   (*this)[key] = val;
   saved = false;
 }
 
-void Properties::remove(const string &key)
+void properties::remove(const string &key)
 {
   erase(key);
   saved = false;
@@ -171,7 +171,7 @@ void Properties::remove(const string &key)
 
 // todo override = operators to reset saved flag
 
-bool Properties::isSaved()
+bool properties::isSaved()
 {
   return saved;
 }

@@ -14,7 +14,7 @@
 
 #include <list>
 #include <map>
-#include "Properties.h"
+#include "properties.h"
 #include "file_util.h"
 #include "message_digest.h"
 #include "serialized_data_format.hpp"
