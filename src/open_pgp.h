@@ -196,7 +196,7 @@ public:
   /*!
   @brief Find best possible key for signing
   This method tries to find the best possible key for signing a file for cryptowerks sealing purposes in the local
-  GPG keyring and stores this key into membervariable key of the open_pgp object.
+  GPG keyring and stores this key into member variable key of the open_pgp object.
 
   It prioritizes keys that have the same email address that was used to register the account with cryptowerk because
   it will be verified by cryptowerk.
@@ -223,23 +223,86 @@ public:
 
   /*!
   @brief Get JSON for cealr
+
   Returns signature and relevant metadate for sealing a file with cryptowerk as JSON.
+  For the signature in the JSON the ASCII armor is removed and line breaks are replaced with spaces
+
   @return  signature and relevant metadate for sealing a file with cryptowerk as JSON.
   */
   json toJson() const;
 
+  /*!
+  @brief converting signature from proprietary JSON to open PGP format
+
+  Method takes the string that parameter sig references and looks if it has the ASCII armor. If the ASCII armor of the
+  signature is not found (e.g for preparing signature for JSON) it will be added. also all spaces in the string will be
+  replaced with line breaks.
+
+  @param reference to sig signature to be checked/converted
+  */
   void expand_sig_if_necessary(string *sig) const;
 
+  /*!
+  @brief makes sure that key is in local GPG keyring
+
+  Method is looking for key with fingerprint referenced by parameter fpr in on the key server and imports it into the
+  local GPG keyring.
+
+  Additionally it asks the user to sign the key, if it is trustworthy.
+
+  @param fpr is the reference to the fingerprint of the key to be imported
+
+  @return true if key was imported to the GPG keyring, otherwise false.
+  */
   bool find_and_import_key(const string &fpr);
 
+  /*!
+  @brief Translates gpgme_validity_t into human readable representation
+
+  @param trust parameter of type gpgme_validity_t
+
+  @return Human readable trust level
+  */
   string get_trust_level(const gpgme_validity_t &trust) const;
 
+  /*!
+  @brief is asking the user if the key in param _key can be trusted
+
+  @param _key public key to check if it can be trusted
+
+  @return true, if key is trusted, otherwise false
+  */
   bool check_trust(gpgme_key_t &_key);
 
+  /*!
+  @brief Returns a the key with fingerprint referenced by parameter fpr.
+
+  Returns a the key with fingerprint referenced by parameter fpr by default in local GPG keyring. Where GPG tries to
+  find the key can be determined by parameter mode (please see GPGME reference for gpgme_keylist_mode).
+
+  @param fpr fingerprint to be found
+  @param mode determines how the key is found (please see GPGME reference for gpgme_keylist_mode for details)
+
+  @return key, specified by fingerprint referenct in parameter fpr
+  */
   gpgme_key_t find_key(const string &fpr, gpgme_keylist_mode_t mode = GPGME_KEYLIST_MODE_LOCAL);
 
+  /*!
+  @brief export key to key server
+
+  @param fpr specifies key to be exported 
+
+  @return true, if key was exported, otherwise false
+  */
   bool export_key(const string &fpr);
 
+  /*!
+  @brief checks if a specific key is on the key server.
+
+  @param fpr contains the fingerprint that specifies the key to be checked.
+
+  @return true, if key is on key server, otherwise false
+  */
   bool is_key_exported(const string &fpr);
 };
 
