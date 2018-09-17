@@ -397,7 +397,7 @@ json open_pgp::toJson() const
   return json;
 }
 
-//todo implement importing/generating key pair
+//todo implement generating key pair
 
 // verify signature
 json open_pgp::verify(const string &file_to_be_verified, string *_signature)

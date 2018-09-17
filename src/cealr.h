@@ -155,12 +155,12 @@ public:
   This method is called to register the hash/signature of the file to be registered in the block chain that is
   assigned to the account.
 
-  @param openPgpSign contains the signature of the file if the file has been signed. In this case the signature
+  @param open_pgp_sign contains the signature of the file if the file has been signed. In this case the signature
           will be uploaded to the cryptowerk server to be registered as meta data of the file.
 
   @return parsed JSON response from server
   */
-  json seal_file(const open_pgp *openPgpSign = nullptr) const;
+  json seal_file(const open_pgp *open_pgp_sign = nullptr) const;
 
   json verify_seal() const;
 

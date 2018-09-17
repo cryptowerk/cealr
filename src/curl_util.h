@@ -23,44 +23,134 @@ using json = nlohmann::json;
 
 using namespace std;
 
-class curl_util {
-private:
-    CURL *curl;
-    bool verbose;
-    string sUrl;
-    string *returnData;
-    CURLcode returnCode;
-    struct curl_slist *headers;
+/*!
+@brief CURL helper class
 
-    string *_request();
+Enables simplified HTTP requests
+*/
+class curl_util
+{
+private:
+  CURL *curl;
+  bool verbose;
+  string sUrl;
+  string *returnData;
+  CURLcode returnCode;
+  struct curl_slist *headers;
+
+  /*!
+  @brief common method for all HTTP requests
+
+  @return Server response
+  */
+  string *_request();
 
 public:
-    curl_util();
+  curl_util();
 
-    curl_util(string url);
+  /*!
+  @brief Constructor with URL only
 
+  @param url contains the URL to be requested
+  */
+  explicit curl_util(string url);
 
-    curl_util(string url, bool bVerbose);
+  /*!
+  @brief Constructor with URL and verbose flag
 
-    ~curl_util();
+  @param url contains the URL to be requested
+  @param bVerbose is true when output to cout is requested for debugging; otherwise false
+  */
+  curl_util(string url, bool bVerbose);
 
-    void setUrl(const string &url);
+  ~curl_util();
 
-    void addHeader(const string &headerField);
+  /*!
+  @brief Setter for URL
 
-    void setVerbose(bool bVerbose);
+  @param url contains the URL to be requested
+  */
+  void setUrl(const string &url);
 
-    string *get();
+  /*!
+  @brief Method to add a header field of the request
 
-    string *post(const string &data);
+  @param Header field in format "<header name>: <value>"
+  */
+  void addHeader(const string &headerField);
 
-    string *post(const string &url, const string &data);
+  /*!
+  @brief Setter for verbose flag
 
-    string *post(const string &url, const json &json);
+  @param bVerbose is true when output to cout is requested for debugging; otherwise false
+  */
+  void setVerbose(bool bVerbose);
 
-    string *post(const json &json);
+  /*!
+  @brief method for GET request
 
-    string *get(string &url);
+  Performs a HTTP GET request to the URL and with the header that is specified in this object
+
+  @return the response from the server
+  */
+  string *get();
+
+  /*!
+  @brief method for POST request
+
+  Performs a HTTP POST request to the URL and with the header that is specified in this object and with the post body from parameter data.
+
+  @param data contains the body for the POST request to be performed.
+
+  @return the response from the server
+  */
+  string *post(const string &data);
+
+  /*!
+  @brief method for POST request
+
+  Performs a HTTP POST request to the URL from the parameter URL, with the header that is specified in this object and with the post body from parameter data.
+
+  @param url contains the url for the POST request to be performed.
+  @param data contains the body for the POST request to be performed.
+
+  @return the response from the server
+  */
+  string *post(const string &url, const string &data);
+
+  /*!
+  @brief method for POST request with JSON
+
+  Performs a HTTP POST request to the URL from the parameter URL, with the header that is specified in this object and with the post body as a JSON formatted string from parameter json.
+
+  @param url contains the url for the POST request to be performed.
+  @param json contains the json object for the body of the POST request.
+
+  @return the response from the server
+  */
+  string *post(const string &url, const json &json);
+
+  /*!
+  @brief method for POST request with JSON
+
+  Performs a HTTP POST request  to the URL and with the header that is specified in this object and with the post body as a JSON formatted string from parameter json.
+
+  @param json contains the json object for the body of the POST request.
+
+  @return the response from the server
+  */
+  string *post(const json &json);
+
+  /*!
+  @brief method for GET request
+
+  Performs a HTTP GET request to the URL from the parameter URL and with the header that is specified in this object.
+
+  @param url contains the url for the GET request to be performed.
+
+  @return the response from the server
+  */
+  string *get(string &url);
 };
 
 

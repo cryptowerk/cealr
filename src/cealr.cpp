@@ -563,7 +563,7 @@ void cealr::verify_metadata(SmartStamp &smartStamp)
   }
 }
 
-json cealr::seal_file(const open_pgp *openPgpSign) const
+json cealr::seal_file(const open_pgp *open_pgp_sign) const
 {
   json json;
   json["name"] = doc_names;
@@ -571,10 +571,10 @@ json cealr::seal_file(const open_pgp *openPgpSign) const
   json["store"] = true; //
   json["hashes"] = hex_hashes;
   json["publiclyRetrievable"] = true;
-  if (openPgpSign)
+  if (open_pgp_sign)
   {
-    json["sealedMetaDataJson"] = openPgpSign->toJson();
-    // json["sealedMetaData"] = openPgpSign->toJson().dump(); // submitting as string
+    json["sealedMetaDataJson"] = open_pgp_sign->toJson();
+    // json["sealedMetaData"] = open_pgp_sign->toJson().dump(); // submitting as string
   }
   stringstream url;
   url << *server << "/API/v5/register";
