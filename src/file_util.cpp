@@ -22,10 +22,10 @@ bool dir_exists(const string &path)
   return (inf.st_mode & S_IFDIR) != 0;
 }
 
-bool fileExists(const string &path)
+bool file_exists(const string &file)
 {
   struct stat inf{};
-  if (stat(path.c_str(), &inf) != 0)
+  if (stat(file.c_str(), &inf) != 0)
   {
     return false;
   }
@@ -333,10 +333,10 @@ unsigned char *getHash(istream &is, unsigned char *md)
   return md;
 }
 
-string *get_env_str(const string &envKey)
+string *get_env_str(const string &env_key)
 {
   string *envStr = nullptr;
-  char *envPwd = getenv(envKey.c_str());
+  char *envPwd = getenv(env_key.c_str());
   if (envPwd)
   {
     envStr = new string(envPwd);

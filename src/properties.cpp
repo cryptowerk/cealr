@@ -90,7 +90,7 @@ void properties::save()
   {
     mkdirs(*pth);
     set_file_permissions(*pth, S_IRUSR | S_IWUSR | S_IXUSR);
-    if (fileExists(file))
+    if (file_exists(file))
     {
       set_file_permissions(file, S_IRUSR | S_IWUSR);
     }

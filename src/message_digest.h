@@ -44,7 +44,6 @@ public:
   unsigned char *digest() override;
 
   size_t getDigestLength() override;
- 
 };
 
 #endif //CEALR_MESSAGE_DIGEST_H
