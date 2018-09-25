@@ -157,9 +157,9 @@ public:
 
   class OperationEvaluator
   {
-//  private:
-  public:  //todo Encapsulate!
+  private:
     MessageDigest *digest;
+  public:  //todo Encapsulate!
     bool origDocComparisonDone;
     bool anchorComparisonDone;
     char *optUsrProvAnchorInBC;
@@ -171,12 +171,14 @@ public:
 
     unsigned char optContainedAnchor[SHA256_DIGEST_LENGTH];
 
-//  public:
     unsigned char accu[SHA256_DIGEST_LENGTH];
 
+  public:
     OperationEvaluator();
 
     ~OperationEvaluator();
+
+    unsigned char *accu_ptr();
 
     VerificationResult *verify(list<Operation *> *operations,
                                unsigned char *origDocHash,
@@ -191,7 +193,7 @@ public:
 
     int getHashLength()
     {
-      return static_cast<int>(digest->getDigestLength());
+      return static_cast<int>(digest->digest_length());
     }
 
     /* used for lazy evaluation in order to not waste time calculating the parameter if it's not required */
@@ -392,7 +394,7 @@ public:
 
   explicit SmartStamp(const string &textRepresentation);
 
-  explicit SmartStamp(const vector<char> _data);
+  explicit SmartStamp(vector<char> _data);
 
   ~SmartStamp();
 
@@ -404,7 +406,7 @@ public:
 //  static void writeSHA256(sdf_ostream *out, unsigned char hash[SHA256_DIGEST_LENGTH])
 //  {
 //    if (hash.length != 256 / 8)
-//      throw IOException(__FILE__, __LINE__, "Illegal length of hash.");
+//      throw io_error(__FILE__, __LINE__, "Illegal length of hash.");
 //    out->writeRaw(hash, SHA256_DIGEST_LENGTH);
 //  }
 
@@ -418,7 +420,7 @@ public:
 
   unsigned char *getRootHash() const;
 
-  list<Operation *> *getOperations() const;
+  list<Operation*> *getOperations() const;
 
   Blockchain *getBlockchain() const;
 

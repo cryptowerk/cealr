@@ -11,9 +11,12 @@
 
 #include "message_digest.h"
 
-MessageDigest *MessageDigest::getInstance(const string &inst)
+void MessageDigest::update(list<vector<unsigned char>> list_data)
 {
-  return new sha256_digest();
+  for (const vector<unsigned char> &ba:list_data)
+  {
+    update((void*) ba.data(), ba.size());
+  }
 }
 
 sha256_digest::sha256_digest()
@@ -34,7 +37,7 @@ unsigned char *sha256_digest::digest()
   return hash;
 }
 
-size_t sha256_digest::getDigestLength()
+size_t sha256_digest::digest_length()
 {
   return SHA256_DIGEST_LENGTH;
 }

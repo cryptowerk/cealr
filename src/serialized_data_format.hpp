@@ -38,13 +38,13 @@ public:
   virtual T read() = 0;
 };
 
-class IOException : public exception
+class io_error : public exception
 {
 private:
   runtime_error _what;
 
 public:
-  IOException(const string &file, const int line, const string &errStr) : _what(
+  io_error(const string &file, const int line, const string &errStr) : _what(
       ("" + file + ":" + to_string(line) + ": " + errStr).c_str()) {}
 
   const char *what()
@@ -54,71 +54,71 @@ public:
 };
 
 
-class ByteArrayInputStream : streambuf
+class int_istream : public streambuf
 {
 public:
-  explicit ByteArrayInputStream(vector<char> *data) : streambuf()
+  explicit int_istream(vector<char> *data) : streambuf()
   {
     char *gbeg = data->begin().base();
     setg(gbeg, gbeg, data->end().base());
   }
 
-  int read()
+  streamsize read_int8buf(void *buff, size_t offset, streamsize length)
+  {
+    return xsgetn(((char *) buff) + offset, length);
+  }
+
+  int read_int8()
   {
     return sbumpc();
   }
 
-  streamsize read(void *buff, size_t offset, streamsize length) {
-    return xsgetn(((char*)buff)+offset,length);
-  }
-
-  int readInt()
+  short read_int16()
   {
-      int ch1 = read();
-      int ch2 = read();
-      int ch3 = read();
-      int ch4 = read();
-
-      return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+    const auto c_h = sbumpc();
+    const auto c_l = sbumpc();
+    return (short) ((c_h << 8) | c_l);
   }
 
-  short readShort() {
-      int ch1 = read();
-      int ch2 = read();
-
-      return (short)((ch1 << 8) + (ch2 << 0));
+  int read_int32()
+  {
+    const auto c_hh = sbumpc();
+    const auto c_hl = sbumpc();
+    const auto c_lh = sbumpc();
+    const auto c_ll = sbumpc();
+    return ((c_hh << 24) | (c_hl << 16) | (c_lh << 8) | c_ll);
   }
 };
 
-typedef enum Compatibility
+typedef enum compatibility
 {
   Default, SuppressReadingOfHeader, PermitPre5Header
-} _Compatibility;
+} _compatibility;
 
 class sdf_istream
 {
 
 private:
-  ByteArrayInputStream *inBase;
+  int_istream *inBase;
   int storedVersion;
 
   int readByteForInt()
   {
-    int b = inBase->read();
+    int b = inBase->read_int8();
     if (b < 0)
     {
-      throw IOException(__FILE__, __LINE__, "Premature end of data while reading an integer.");
+      throw io_error(__FILE__, __LINE__, "Premature end of data while reading an integer.");
     }
     return b;
   }
 
 public:
-  explicit sdf_istream(ByteArrayInputStream *_inBase, _Compatibility compatibility)
+  explicit sdf_istream(int_istream *_inBase, _compatibility compatibility)
   {
     inBase = _inBase;
-    if (compatibility != _Compatibility::SuppressReadingOfHeader)
+    if (compatibility != _compatibility::SuppressReadingOfHeader)
     {
-      readHeader(compatibility == _Compatibility::PermitPre5Header);
+      readHeader(compatibility == _compatibility::PermitPre5Header);
     }
     else
     {
@@ -126,12 +126,12 @@ public:
     }
   }
 
-  explicit sdf_istream(vector<char> *in, _Compatibility compatibility)
+  explicit sdf_istream(vector<char> *in, _compatibility compatibility)
   {
-    inBase = new ByteArrayInputStream(in);
-    if (compatibility != _Compatibility::SuppressReadingOfHeader)
+    inBase = new int_istream(in);
+    if (compatibility != _compatibility::SuppressReadingOfHeader)
     {
-      readHeader(compatibility == _Compatibility::PermitPre5Header);
+      readHeader(compatibility == _compatibility::PermitPre5Header);
     }
     else
     {
@@ -182,8 +182,8 @@ public:
     {
       vector<char> buf(4, 0);
       readRaw(&buf[0], 4);
-      ByteArrayInputStream bis(&buf);
-      v = bis.readInt();
+      int_istream bis(&buf);
+      v = bis.read_int32();
     }
 
     return v;
@@ -194,13 +194,13 @@ public:
     return storedVersion >= minVersion;
   }
 
-  //public sdf_istream(istream inBase) throws IOException {
+  //public sdf_istream(istream inBase) throws io_error {
   //  this(inBase,false);
   //}
 
   void readHeader(bool permitPre5Header)
   {
-    storedVersion = 5; // make subsequent readInt() use the new input format
+    storedVersion = 5; // make subsequent read_int32() use the new input format
     storedVersion = (int) readInt();
 
     if (permitPre5Header)
@@ -209,13 +209,13 @@ public:
       {
         vector<char> oldStyleVersionRaw(2,0);
         readRaw(&oldStyleVersionRaw[0], (size_t)1, static_cast<int>(oldStyleVersionRaw.size() - 1));
-        ByteArrayInputStream in(&oldStyleVersionRaw);
-        int oldStyleVersion = in.readShort();
+        int_istream in(&oldStyleVersionRaw);
+        int oldStyleVersion = in.read_int16();
         if (oldStyleVersion > 4)
         {
           stringstream str;
           str << "Old style version prefix has only been supported up to version 4 but is " << oldStyleVersion;
-          throw IOException(__FILE__, __LINE__, str.str());
+          throw io_error(__FILE__, __LINE__, str.str());
         }
         storedVersion = oldStyleVersion;
       }
@@ -226,7 +226,7 @@ public:
     {
       stringstream m;
       m << "Cannot process input stream of version " << storedVersion << ", highest currently known version is " << currentVersion;
-      throw IOException(__FILE__, __LINE__, m.str());
+      throw io_error(__FILE__, __LINE__, m.str());
     }
   }
 
@@ -238,18 +238,33 @@ public:
   {
     for (int numRead = 0; numRead < length;)
     {
-      streamsize got = inBase->read(b, (size_t) (offset + numRead), (streamsize) length - numRead);
+      streamsize got = inBase->read_int8buf(b, (size_t) (offset + numRead), (streamsize) length - numRead);
       if (got < 0)
       {
         stringstream m;
         m << "Cannot fully read a byte array, expected " << length << " bytes but only could read " << numRead << ".";
-        throw IOException(__FILE__, __LINE__, m.str());
+        throw io_error(__FILE__, __LINE__, m.str());
       }
       else if (got > 0)
       {
         numRead += got;
       }
     }
+  }
+
+  // todo implement read_char_vector(int len) and replace hashes by vector<unsigned char>
+  vector<unsigned char> *read_char_vector(unsigned long len)
+  {
+    auto data = new vector<unsigned char>(len);
+
+    for_each(istreambuf_iterator<char>(inBase), //todo correct iterator (current pointer in inBase)
+             istreambuf_iterator<char>(),       //todo correct iterator (last character to be copied from inBase)
+             [data](const unsigned char c)
+             {
+               data->push_back(c);
+             });
+
+    return data;
   }
 
   string *readString()
@@ -272,15 +287,16 @@ public:
   }
 
 
-  int *readOptInt() {
-      return readBoolean()? new int (readInt()):nullptr;
+  int *readOptInt()
+  {
+    return readBoolean() ? new int(readInt()) : nullptr;
   }
 
   char readByte()
   {
-      int b=inBase->read();
+    int b = inBase->read_int8();
 
-      return static_cast<char>(b);
+    return static_cast<char>(b);
   }
 
   template <class T>
@@ -362,9 +378,9 @@ public:
 //    else if (clazz == Boolean.class || clazz == bool.TYPE)
 //    return readBoolean();
 //    else if (clazz == Long.class || clazz == Long.TYPE)
-//    return readInt();
+//    return read_int32();
 //    else if (clazz == Integer.class || clazz == Integer.TYPE)
-//    return Integer.valueOf((int) readInt());
+//    return Integer.valueOf((int) read_int32());
 //    //else if (clazz==Pair.class)
 //    //  return readPair(aClass,bClass);
 //    else if (clazz == byte[].class)
@@ -379,18 +395,18 @@ public:
 //      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException |
 //                                       InvocationTargetException
 //      e) {
-//        throw IOException(__FILE__, __LINE__, e);
+//        throw io_error(__FILE__, __LINE__, e);
 //      }
 //    }
 //    else if (clazz == List.class /*|| clazz==Set.class*/) {
 //      if (optReader == nullptr)
 //      {
-//        throw IOException(__FILE__, __LINE__, "List object requested but reader not set.");
+//        throw io_error(__FILE__, __LINE__, "List object requested but reader not set.");
 //      }
 //      return readList(optReader);
 //    }
 //    else
-//    throw IOException(__FILE__, __LINE__, "Cannot read object of class " + clazz.getName());
+//    throw io_error(__FILE__, __LINE__, "Cannot read object of class " + clazz.getName());
 //  }
 
 //  Object readOptObject(Class<?> clazz, Reader<?> optReader)

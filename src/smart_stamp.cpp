@@ -49,13 +49,13 @@ void SmartStamp::parse()
   parseTried = true;
   bool headerOk = false;
   int storedVersion = -1;
-  ByteArrayInputStream inRaw(data);
+  int_istream inRaw(data);
 
   if (data->size() >= 3 &&
-      inRaw.read() == 'S' &&
-      inRaw.read() == 'T')
+      inRaw.read_int8() == 'S' &&
+      inRaw.read_int8() == 'T')
   {
-    storedVersion = inRaw.read();
+    storedVersion = inRaw.read_int8();
     if (storedVersion >= MIN_VERSION && storedVersion <= MAX_VERSION)
     {
       headerOk = true;
@@ -65,8 +65,8 @@ void SmartStamp::parse()
   {
     throw SmartStampError(__FILE__, __LINE__, "SmartStamp has an invalid header.");
   }
-  sdf_istream in(&inRaw, storedVersion < 2 ? _Compatibility::SuppressReadingOfHeader
-                                           : _Compatibility::Default);
+  sdf_istream in(&inRaw, storedVersion < 2 ? _compatibility::SuppressReadingOfHeader
+                                           : _compatibility::Default);
 
   bundleMethod = in.supports(8) ? static_cast<BundleMethod>((int) in.readInt()) :
                               BundleMethod::BALANCED_MERKLE_TREE;
@@ -259,7 +259,7 @@ SmartStamp::OperationEvaluator::OperationEvaluator()
   origDocComparisonDone           = false;
   anchorComparisonDone            = false;
   verificationSources             = new list<VerificationSource>();
-  digest                          = MessageDigest::getInstance("SHA-256");
+  digest                          = new sha256_digest();
   optUsrProvAnchorInBC            = nullptr;
   optLookedUpAnchorInBlockchain   = nullptr;
   optLookedUpVerificationSources  = nullptr;
@@ -299,6 +299,11 @@ SmartStamp::OperationEvaluator::~OperationEvaluator()
   delete additionalInfo;
   delete verificationSources;
   delete optInstructions;
+}
+
+unsigned char *SmartStamp::OperationEvaluator::accu_ptr()
+{
+  return accu;
 }
 
 json SmartStamp::VerificationSource::toJson()
@@ -361,10 +366,10 @@ json SmartStamp::VerificationResult::toJson()
 void SmartStamp::Append::execute(OperationEvaluator &vm) const
 {
   char combo[2*SHA256_DIGEST_LENGTH];
-  memcpy(combo, vm.accu, SHA256_DIGEST_LENGTH);
+  memcpy(combo, vm.accu_ptr(), SHA256_DIGEST_LENGTH);
   memcpy(combo+SHA256_DIGEST_LENGTH, hash, SHA256_DIGEST_LENGTH);
-  memcpy(vm.accu, vm.hash(combo, 2*SHA256_DIGEST_LENGTH), SHA256_DIGEST_LENGTH);
-  vm.instruct("Append " + to_hex(hash, SHA256_DIGEST_LENGTH) + " and hash it, resulting in " + to_hex(vm.accu, SHA256_DIGEST_LENGTH) + ".");
+  memcpy(vm.accu_ptr(), vm.hash(combo, 2*SHA256_DIGEST_LENGTH), SHA256_DIGEST_LENGTH);
+  vm.instruct("Append " + to_hex(hash, SHA256_DIGEST_LENGTH) + " and hash it, resulting in " + to_hex(vm.accu_ptr(), SHA256_DIGEST_LENGTH) + ".");
 }
 
 SmartStamp::Append::Append(unsigned char *_hash)
@@ -381,9 +386,9 @@ SmartStamp::Append::Append(unsigned char *_hash)
 void SmartStamp::DocHash::execute(SmartStamp::OperationEvaluator &vm) const
 {
   vm.instruct(
-      "Check that hash in SmartStamp " + to_hex(vm.accu, SHA256_DIGEST_LENGTH) + " equals actual document hash " +
+      "Check that hash in SmartStamp " + to_hex(vm.accu_ptr(), SHA256_DIGEST_LENGTH) + " equals actual document hash " +
       to_hex(docHash, SHA256_DIGEST_LENGTH) + ".");
-  if (memcmp(vm.accu, docHash, SHA256_DIGEST_LENGTH) != 0)
+  if (memcmp(vm.accu_ptr(), docHash, SHA256_DIGEST_LENGTH) != 0)
   {
     throw SmartStampError(__FILE__, __LINE__,
                           "Original document hash does not equal document hash contained in SmartStamp.");
@@ -400,9 +405,9 @@ void SmartStamp::Prepend::execute(SmartStamp::OperationEvaluator &vm) const
 {
   char combo[2*SHA256_DIGEST_LENGTH];
   memcpy(combo, hash, SHA256_DIGEST_LENGTH);
-  memcpy(combo+SHA256_DIGEST_LENGTH, vm.accu, SHA256_DIGEST_LENGTH);
-  memcpy(vm.accu, vm.hash(combo, 2*SHA256_DIGEST_LENGTH), SHA256_DIGEST_LENGTH);
-  vm.instruct("Prepend " + to_hex(hash, SHA256_DIGEST_LENGTH) + " and hash it, resulting in " + to_hex(vm.accu, SHA256_DIGEST_LENGTH) + ".");
+  memcpy(combo+SHA256_DIGEST_LENGTH, vm.accu_ptr(), SHA256_DIGEST_LENGTH);
+  memcpy(vm.accu_ptr(), vm.hash(combo, 2*SHA256_DIGEST_LENGTH), SHA256_DIGEST_LENGTH);
+  vm.instruct("Prepend " + to_hex(hash, SHA256_DIGEST_LENGTH) + " and hash it, resulting in " + to_hex(vm.accu_ptr(), SHA256_DIGEST_LENGTH) + ".");
 }
 
 SmartStamp::Anchor::Anchor(unsigned char *_hash)
@@ -413,8 +418,8 @@ SmartStamp::Anchor::Anchor(unsigned char *_hash)
 void SmartStamp::Anchor::execute(SmartStamp::OperationEvaluator &vm) const
 {
   vm.instruct("Check that provided anchor " + to_hex(hash, SHA256_DIGEST_LENGTH) + " equals calculated anchor " +
-              to_hex(vm.accu, SHA256_DIGEST_LENGTH) + ".");
-  if (memcmp(vm.accu, hash, SHA256_DIGEST_LENGTH) != 0) {
+              to_hex(vm.accu_ptr(), SHA256_DIGEST_LENGTH) + ".");
+  if (memcmp(vm.accu_ptr(), hash, SHA256_DIGEST_LENGTH) != 0) {
     throw SmartStampError(__FILE__, __LINE__, "Calculated anchor does not equal stored anchor in SmartStamp.");
   }
   string str("AnchorInStamp");
