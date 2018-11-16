@@ -59,9 +59,9 @@ Please enter your first name.....................: John
 Please enter your last name......................: Smith
 Please enter your organization (if applicable)...: 
  
-Contacting server for registration"http://localhost:8080/platform"
+Contacting server for registration"https://devapi1.cryptowerk.com/platform"
  
-You are now registered with our server "http://localhost:8080/platform".
+You are now registered with our server "https://devapi1.cryptowerk.com/platform".
 An email has been sent to your account "john.smith@maildomain.com".
 Please follow the instructions in this email to choose your password and
 to activate your account.
