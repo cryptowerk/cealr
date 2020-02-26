@@ -45,7 +45,7 @@ void print_usage_msg::usage_message(string cmd_name)
   cout << endl;
   cout << "Usage for sealing own files:" << endl;
   cout << cmd_name << " [options] --seal <file>[@<version>]" << endl;
-  cout << cmd_name << " [options] --sign <file>[@<version>]" << endl;
+//  cout << cmd_name << " [options] --sign <file>[@<version>]" << endl;
   cout << endl;
   cout << "  General options:" << endl;
   cout << "  --verbose         enable verbose output" << endl;
@@ -90,14 +90,14 @@ cealr::cealr(const int argc, const char **argv)
   cout << *p_properties << endl;
 
   // should call default constructor
-  register_arg_found = false;
-  reg_client = false;
-  seal = false;
-  sign = false;
-  server = nullptr;
-  email = nullptr;
-  api_key = nullptr;
-  api_credential = nullptr;
+  register_arg_found  = false;
+  reg_client          = false;
+  seal                = false;
+  sign                = false;
+  server              = nullptr;
+  email               = nullptr;
+  api_key             = nullptr;
+  api_credential      = nullptr;
 
   for (int i = 1; i < argc; i++)
   {
@@ -248,10 +248,8 @@ void cealr::run()
       cout << endl << "Contacting server \"" << *server << "\" to retrieve your account credentials." << endl << endl;
       json ret_json = creds(*password);
       cout << ret_json.dump() << endl;
-      string str = ret_json["apiKey"];
-      api_key = new string(str);
-      str = ret_json["apiCredential"];
-      api_credential = new string(str);
+      api_key        = new string((string&)ret_json["apiKey"]);
+      api_credential = new string((string&)ret_json["apiCredential"]);
       if (!api_credential || !api_credential->length())
       {
         cerr << "The apiCredential has already been revealed for this apiKey." << endl
@@ -265,7 +263,7 @@ void cealr::run()
              << "combination which may be used in other systems." << endl;
         exit(1);
       }
-      p_properties->put("apiKey", *api_key);
+      p_properties->put("apiKey",        *api_key);
       p_properties->put("apiCredential", *api_credential);
       p_properties->save();
     }
@@ -457,7 +455,7 @@ void cealr::verify_metadata(SmartStamp &smartStamp)
   if (sealed_meta_data != nullptr)
   {
     const auto sealedContent = *sealed_meta_data->getData();
-        auto content = json::parse(sealedContent); // keep string to build hash
+    auto content = json::parse(sealedContent); // keep string to build hash
     // check hash of sealed_meta_data, output verification info of sealed metadata
     auto doc_hash_meta = content["docHash"];
     const auto hasJson = doc_hash_meta != nullptr;
@@ -567,9 +565,10 @@ json cealr::seal_file(const open_pgp *open_pgp_sign) const
 {
   json json;
   json["name"] = doc_names;
+  json["lookupInfo"] = doc_names;
   json["contentType"] = *new string("application/octet-stream");
   json["store"] = true; //
-  json["hashes"] = hex_hashes;
+    json["hashes"] = hex_hashes;
   json["publiclyRetrievable"] = true;
   if (open_pgp_sign)
   {
@@ -594,6 +593,7 @@ json cealr::verify_seal() const
 {
   json json;
   json["name"] = doc_names;
+  json["lookupInfo"] = doc_names;
   json["contentType"] = *new string("application/octet-stream");
   json["retrievalDocHash"] = hex_hashes;
   json["provideRegistrarInfo"] = true;
@@ -601,7 +601,16 @@ json cealr::verify_seal() const
   url << *server << "/API/v5/verify";
   string sUrl = url.str();
   curl_util curl(sUrl, verbose);
-  curl.addHeader("X-ApiKey: TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=");
+  if (api_credential) {
+    stringstream api_cred_str;
+    api_cred_str << "X-ApiKey: " << *api_key << " " << *api_credential;
+    const string api_creds = api_cred_str.str();
+    curl.addHeader(api_creds);
+  }
+  else
+  {
+    curl.addHeader("X-ApiKey: TskZZ8Zc2QzE3G/lxvUnWPKMk27Ucd1tm9K+YSPXWww= vV+2buaDD5aAcCQxCtk4WRJs+yK/BewThR1qUXikdJo=");
+  }
 //    string *returnData = new string("{\"maxSupportedAPIVersion\":5,\"documents\":[{\"retrievalId\":\"ri2179949c32bcc46560c9542cf0e48f981d0f26a6633ebbcedc9a96e3482416de1011b09\",\"registrarInfo\":{\"organization\":\"test\"},\"sealedMetaData\":{\"retrievalId\":\"ri2179950c388f94e32bd565762546d33015b9a901efd9c6cade59cda6bee0678d4024123\",\"data\":\"{\\\"key_id\\\":\\\"3965135F3C89FA95\\\",\\\"signature\\\":\\\" iQIyBAEBCAAdFiEEfLYAv3apQznh5CivOWUTXzyJ+pUFAluA4RQACgkQOWUTXzyJ +pXJlA/45RNwTnWCiS/qvyRdsCHn2e1It7PRJOq888PB5nro/7N9s8VYOtwK1067 DzAchwg65dnWfEv3OGgPCHiXJ2p2r5O71qCT7L/XGIeE0vZiex9p8nmCpi+5NkQ7 +MhWTPJpZLvAfmTIHPkFMuxChnZnqW6CBt9/aPO/DMv8/RmNztHwFLRuUUk7aR8M Uih8O1MD16xn4jvU8p0+7c9ZS5Vn/FlZv434sTNZmObXSZWtCmbnmYsxDBkFPezn fsWhp3oV1uPL/mMo2kEwPDYlIUhQAXB5A6rjZf4vDRMshziCzEQc1ZqSpzX7hqdc h5FRnqtgGKt7hVj79rg+BbDR9vyI1iKGSAsrmTpr7eSa5m2RXAk2rpSqW+2c8lU6 wjK1Q0sZI7JgNAFWZb7txj42IPAqaothBiTVnYztgR8jS0WgiGi89Ir4YvbR/o0s /61lvs8cPb0Smcvaa5kMxv6PUrUKNeqXk2hAH5bVyEOngzyIoBAaNRnCP31Y+YxE jB3tA0LUYXY0aw38hpWy9ZxWQQOLt9mc4e2SESfo2tZf8H4oTC+gDV6Nn4EYxgUo 6QFSMYljv9JOgL5ibggJJVnBU5LfizwmXv7vvw8dp851ognTBKyQ6DsH+4kMjdd9 Hw9uNdfezo+952O7dCZUY7AfDLXpozE7iGTKLNIyeKrXsangbA== =o0RX \\\"}\"},\"name\":\"CMakeCache.txt, sealed by olaf.zumpe@gmail.com\",\"submittedAt\":1535172960448,\"contentType\":\"application/octet-stream\",\"hasBeenInsertedIntoAtLeastOneBlockchain\":false,\"blockchainRegistrations\":[],\"hasBeenInsertedIntoAllRequestedBlockchains\":false}],\"minSupportedAPIVersion\":1}");
   string *return_data = curl.post(json);
   auto ret_json = json::parse(*return_data);
@@ -621,7 +630,7 @@ json cealr::register_client(const string &firstName, const string &lastName, con
     json["optOrganization"] = *organization;
   }
   stringstream url;
-  url << *server << "/API/v5/registerUser";
+  url << *server << "/userAccountAPI/v5/registerUser";
   string sUrl = url.str();
   curl_util curl(sUrl, verbose);
   string *return_data = curl.post(json);

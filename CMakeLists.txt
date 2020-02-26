@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(cealr)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 cmake_policy(SET CMP0060 NEW)
 
 set(SOURCE_FILES src/cealr.cpp src/cealr.h src/properties.cpp src/properties.h src/curl_util.cpp src/curl_util.h src/file_util.cpp src/file_util.h src/open_pgp.cpp src/open_pgp.h src/smart_stamp.cpp src/smart_stamp.h src/serialized_data_format.hpp src/message_digest.cpp src/message_digest.h src/base64.h)
